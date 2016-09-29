@@ -3,15 +3,23 @@ defmodule Heimdall.Router do
 
   use Plug.Router
   import Rackla
+  alias Heimdall.DynamicRoutes
 
   plug :match
   plug :dispatch
 
-  get "/proxy" do
-    conn.query_string
-    |> request
-    |> response
+  defmodule ProxyPlug do
+    def init(opts), do: opts
+
+    def call(conn, opts) do
+      conn.query_string
+      |> request
+      |> response
+    end
   end
+
+
+  forward "/", to: DynamicRoutes, tab: :heimdall_routes
 
   match _ do
     conn
