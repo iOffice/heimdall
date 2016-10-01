@@ -15,7 +15,7 @@ defmodule Heimdall.Mixfile do
   # Type "mix help compile.app" for more information
   def application do
     [
-      applications: [:logger, :rackla, :cowboy],
+      applications: [:logger, :rackla, :cowboy, :httpoison],
       mod: {Heimdall.Application, []}
     ]
   end
@@ -33,7 +33,8 @@ defmodule Heimdall.Mixfile do
     [
       {:rackla, "~> 1.2"},
       {:cowboy, "~> 1.0.0"},
-      {:plug, "~> 1.0"}
+      {:plug, "~> 1.0"},
+      {:httpoison, "~> 0.9.0"}
     ]
   end
 end
