@@ -54,9 +54,9 @@ defmodule Heimdall.BingeWatch do
 
   defp register_routes(routes) do
     DynamicRoutes.unregister_all(:heimdall_routes)
-    routes |> Enum.map(fn {host, path, plug, opts} ->
+    Enum.map routes, fn {host, path, plug, opts} ->
       DynamicRoutes.register(:heimdall_routes, host, path, plug, opts)
-    end)
+    end
     routes
   end
 
@@ -67,7 +67,6 @@ defmodule Heimdall.BingeWatch do
     |> build_routes
     |> register_routes
   end
-
 
   def call(conn, opts) do
     marathon_url = Application.get_env(:heimdall, :marathon_url, "http://localhost:8080")

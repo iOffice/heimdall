@@ -9,18 +9,24 @@ defmodule Heimdall.Util.PlugUtils do
           |> next.(opts)
         end
       {false, true} ->
+        true = is_atom(current)
+
         fn conn, opts ->
           conn
           |> current.call(current.init(opts))
           |> next.(opts)
         end
       {true, false} ->
+        true = is_atom(next)
+
         fn conn, opts ->
           conn
           |> current.(opts)
           |> next.call(next.init(opts))
         end
       {false, false} ->
+        {true, true} = {is_atom(current), is_atom(next)}
+
         fn conn, opts ->
           conn
           |> current.call(current.init(opts))
