@@ -1,4 +1,4 @@
-defmodule Heimdall.PlugUtilsTest do
+defmodule Heimdall.Test.PlugUtils do
   use ExUnit.Case
   use Plug.Test
 

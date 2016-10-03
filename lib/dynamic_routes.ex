@@ -28,8 +28,8 @@ defmodule Heimdall.DynamicRoutes do
     true = :ets.insert(tab, {host, path, plugs, opts})
   end
 
-  def unregister(tab, host, path, plugs) do
-    true = :ets.match_delete(tab, {host, path, plugs, :_})
+  def unregister(tab, host, path) do
+    true = :ets.match_delete(tab, {host, path, :_, :_})
   end
 
   def unregister_all(tab) do
