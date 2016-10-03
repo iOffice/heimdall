@@ -4,7 +4,6 @@ defmodule Heimdall.Router do
   use Plug.Router
   alias Heimdall.BingeWatch
   alias Heimdall.DynamicRoutes
-  import Rackla
 
   plug :match
   plug :dispatch

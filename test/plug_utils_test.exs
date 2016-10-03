@@ -42,14 +42,14 @@ defmodule Heimdall.PlugUtilsTest do
 
   test "wrap_plugs respects a module plug's init function" do
     conn = conn(:get, "http://test.com/")
-    new_plug = wrap_plugs([TestInitPlug], fn conn, opts -> conn end)
+    new_plug = wrap_plugs([TestInitPlug], fn conn, _opts -> conn end)
     new_conn = new_plug.(conn, [test: "test"])
     assert new_conn.assigns[:test] == "test"
   end
 
   test "wrap_plugs respects a module plug's init function as start param" do
     conn = conn(:get, "http://test.com/")
-    new_plug = wrap_plugs([fn conn, opts -> conn end], TestInitPlug)
+    new_plug = wrap_plugs([fn conn, _opts -> conn end], TestInitPlug)
     new_conn = new_plug.(conn, [test: "test"])
     assert new_conn.assigns[:test] == "test"
   end
@@ -70,13 +70,13 @@ defmodule Heimdall.PlugUtilsTest do
 
   test "wrap_plug fails for one non plug params" do
     assert_raise MatchError, "no match of right hand side value: false", fn ->
-      wrap_plug("test1", fn c, o -> c end)
+      wrap_plug("test1", fn c, _o -> c end)
     end
   end
 
   test "wrap_plug fails for another non plug params" do
     assert_raise MatchError, "no match of right hand side value: false", fn ->
-      wrap_plug(fn c, o -> c end, "test1")
+      wrap_plug(fn c, _o -> c end, "test1")
     end
   end
 end

@@ -6,13 +6,13 @@ defmodule Heimdall.DynamicRoutes do
   defmodule AddApplicationHeader do
     def init(opts), do: opts
 
-    def call(conn, opts) do
+    def call(conn, _opts) do
       conn
       |> put_req_header("x-application-code", "HEIMDALLTEST")
     end
   end
 
-  def default_proxy_plug(conn, opts) do
+  def default_proxy_plug(conn, _opts) do
     {_, {:ok, forward_request}} = incoming_request_conn(conn)
     query_string =  if conn.query_string != "", do: "?#{conn.query_string}", else: ""
     new_url =
@@ -40,7 +40,7 @@ defmodule Heimdall.DynamicRoutes do
 
   def call(conn, tab) do
     case :ets.match_object(tab, {conn.host, conn.request_path, :_, :_}) do
-      [{host, path, plugs, opts}] -> wrap_plugs(plugs, &default_proxy_plug/2).(conn, opts)
+      [{_, _, plugs, opts}] -> wrap_plugs(plugs, &default_proxy_plug/2).(conn, opts)
       [] -> send_resp(conn, 404, "no routes found")
     end
   end
