@@ -2,7 +2,7 @@ defmodule Heimdall.Router do
   @moduledoc false
 
   use Plug.Router
-  alias Heimdall.BingeWatch
+  alias Heimdall.Marathon.BingeWatch
   alias Heimdall.DynamicRoutes
 
   plug :match

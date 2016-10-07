@@ -1,4 +1,4 @@
-defmodule Heimdall.BingeWatch do
+defmodule Heimdall.Marathon.BingeWatch do
   import Plug.Conn
   alias Heimdall.DynamicRoutes
 
@@ -68,8 +68,8 @@ defmodule Heimdall.BingeWatch do
     |> register_routes
   end
 
-  def call(conn, opts) do
-    marathon_url = Application.get_env(:heimdall, :marathon_url, "http://localhost:8080")
+  def call(conn, _opts) do
+    marathon_url = Application.fetch_env!(:heimdall, :marathon_url)
     routes = reload_marathon_config(marathon_url)
 
     conn

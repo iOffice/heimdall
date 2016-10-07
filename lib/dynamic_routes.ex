@@ -1,28 +1,7 @@
 defmodule Heimdall.DynamicRoutes do
-  import Rackla
   import Plug.Conn
   import Heimdall.Util.PlugUtils
-
-  defmodule AddApplicationHeader do
-    def init(opts), do: opts
-
-    def call(conn, _opts) do
-      conn
-      |> put_req_header("x-application-code", "HEIMDALLTEST")
-    end
-  end
-
-  def default_proxy_plug(conn, _opts) do
-    {_, {:ok, forward_request}} = incoming_request_conn(conn)
-    query_string =  if conn.query_string != "", do: "?#{conn.query_string}", else: ""
-    new_url =
-      "#{Atom.to_string(conn.scheme)}://#{conn.host}:#{8081}#{conn.request_path}#{query_string}"
-
-    forward_request
-    |> Map.put(:url, new_url)
-    |> request
-    |> response
-  end
+  alias Heimdall.Plug.ForwardRequest
 
   def register(tab, host, path, plugs, opts) do
     true = :ets.insert(tab, {host, path, plugs, opts})
@@ -40,7 +19,7 @@ defmodule Heimdall.DynamicRoutes do
 
   def call(conn, tab) do
     case :ets.match_object(tab, {conn.host, conn.request_path, :_, :_}) do
-      [{_, _, plugs, opts}] -> wrap_plugs(plugs, &default_proxy_plug/2).(conn, opts)
+      [{_, _, plugs, opts}] -> wrap_plugs(plugs, ForwardRequest).(conn, opts)
       [] -> send_resp(conn, 404, "no routes found")
     end
   end

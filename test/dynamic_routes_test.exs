@@ -6,29 +6,15 @@ defmodule Heimdall.Test.DynamicRoutes do
 
   alias Heimdall.DynamicRoutes
 
-  defmodule TestRouter do
-    use Plug.Router
+  setup_all do
+    {:ok, _pid} = Plug.Adapters.Cowboy.http(Heimdall.Test.TestRouter, [], port: 8082)
 
-    plug :match
-    plug :dispatch
-
-    get "/test" do
-      conn
-      |> resp(200, "ok")
+    on_exit fn ->
+      :ok = Plug.Adapters.Cowboy.shutdown(Heimdall.Test.TestRouter.HTTP)
     end
 
-    get "/test1" do
-      conn
-      |> resp(200, "ok")
-    end
-
-    get "/test2" do
-      conn
-      |> resp(200, "ok")
-    end
+    :ok
   end
-
-  Plug.Adapters.Cowboy.http(TestRouter, [], port: 8081)
 
   setup context do
     table_name = context.test
