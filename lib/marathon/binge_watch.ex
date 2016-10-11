@@ -7,7 +7,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     opts
   end
 
-  defp string_to_module(module_string) do
+  def string_to_module(module_string) do
     String.to_existing_atom("Elixir." <> module_string)
   end
 
@@ -15,8 +15,8 @@ defmodule Heimdall.Marathon.BingeWatch do
     host = get_in(app, ["labels", "heimdall.host"])
     path = get_in(app, ["labels", "heimdall.path"])
     opts = get_in(app, ["labels", "heimdall.options"])
-    filtersString = get_in(app, ["labels", "heimdall.filters"])
-    {:ok, filters} = Poison.decode(filtersString)
+    filters_string = get_in(app, ["labels", "heimdall.filters"])
+    {:ok, filters} = Poison.decode(filters_string)
     plugs = Enum.map(filters, &string_to_module/1)
     {host, path, plugs, opts}
   end
@@ -31,25 +31,17 @@ defmodule Heimdall.Marathon.BingeWatch do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        Logger.warn "Request to Marathon failed: #{status} #{body}"
-        {:error, ""}
+        {:error, "Request to Marathon failed: #{status} #{body}"}
       {:error, %HTTPoison.Error{reason: reason}} ->
-        Logger.warn "Request to Marathon failed: " <> reason
-        {:error, ""}
+        {:error, "Request to Marathon failed: #{reason}"}
     end
   end
 
-  defp decode_apps(http) do
-    case http do
-      {:ok, json} ->
-        case Poison.decode(json) do
-          {:ok, decoded} ->
-            get_in(decoded, ["apps"])
-          {:error, reason} ->
-            Logger.warn "Failed to decode JSON from marathon: " <> reason
-            []
-        end
-      {:error, _} -> []
+  defp decode_apps(result) do
+    case Poison.decode(result) do
+      {:ok, decoded} ->
+        Map.fetch(decoded, "apps")
+      {:error, _} = error -> error
     end
   end
 
@@ -62,18 +54,27 @@ defmodule Heimdall.Marathon.BingeWatch do
   end
 
   defp reload_marathon_routes(marathon_url) do
-    marathon_url <> "/v2/apps"
-    |> request_apps
-    |> decode_apps
-    |> build_routes
-    |> register_routes
+    with url <- marathon_url <> "/v2/apps",
+         {:ok, resp} <- request_apps(url),
+         {:ok, apps} <- decode_apps(resp),
+         routes <- build_routes(apps),
+    do: {:ok, register_routes(routes)}
   end
 
   def call(conn, _opts) do
     marathon_url = Application.fetch_env!(:heimdall, :marathon_url)
-    routes = reload_marathon_routes(marathon_url)
+    maybe_routes = reload_marathon_routes(marathon_url)
 
-    conn
-    |> send_resp(200, "ok, routes created: #{inspect(routes)}")
+    case maybe_routes do
+      {:ok, routes} ->
+        conn
+        |> send_resp(200, "ok, routes created: #{inspect(routes)}")
+      {:error, reason} ->
+        Logger.warn "Creating routes failed: #{reason}"
+        conn |> send_resp(500, "")
+      _ ->
+        Logger.warn "Created routes failed for unknown reason"
+        conn |> send_resp(500, "")
+    end
   end
 end

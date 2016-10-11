@@ -1,5 +1,5 @@
 defmodule Heimdall.Test.PlugUtils do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   use Plug.Test
 
   import Plug.Conn
