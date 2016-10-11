@@ -17,13 +17,20 @@ defmodule Heimdall.Application do
 
     :ets.new(:heimdall_routes, [:named_table, :bag, :public])
 
-    children = [
-      Plug.Adapters.Cowboy.child_spec(:http, Heimdall.Router, [], [port: port]),
-      worker(
+    register_marathon = Application.fetch_env!(:heimdall, :register_marathon)
+
+    register_worker = if register_marathon do
+      [worker(
         Task,
         [Heimdall.Marathon.RegisterCallback, :register, [marathon_url, port]],
-        restart: :temporary)
-    ]
+        restart: :temporary)]
+    else
+      []
+    end
+
+    children = [
+      Plug.Adapters.Cowboy.child_spec(:http, Heimdall.Router, [], [port: port]),
+    ] ++ register_worker
 
     opts = [strategy: :one_for_one, name: Heimdall.Supervisor]
     Supervisor.start_link(children, opts)

@@ -1,4 +1,5 @@
 defmodule Heimdall.Marathon.BingeWatch do
+  require Logger
   import Plug.Conn
   alias Heimdall.DynamicRoutes
 
@@ -10,7 +11,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     String.to_existing_atom("Elixir." <> module_string)
   end
 
-  def build_route(app) do
+  defp build_route(app) do
     host = get_in(app, ["labels", "heimdall.host"])
     path = get_in(app, ["labels", "heimdall.path"])
     opts = get_in(app, ["labels", "heimdall.options"])
@@ -30,10 +31,10 @@ defmodule Heimdall.Marathon.BingeWatch do
       {:ok, %HTTPoison.Response{status_code: 200, body: body}} ->
         {:ok, body}
       {:ok, %HTTPoison.Response{status_code: status, body: body}} ->
-        IO.puts("Request to Marathon failed: #{status} #{body}")
+        Logger.warn "Request to Marathon failed: #{status} #{body}"
         {:error, ""}
       {:error, %HTTPoison.Error{reason: reason}} ->
-        IO.puts("Request to Marathon failed: " <> reason)
+        Logger.warn "Request to Marathon failed: " <> reason
         {:error, ""}
     end
   end
@@ -45,22 +46,22 @@ defmodule Heimdall.Marathon.BingeWatch do
           {:ok, decoded} ->
             get_in(decoded, ["apps"])
           {:error, reason} ->
-            IO.puts("Failed to decode JSON from marathon: " <> reason)
-            {:ok, []}
+            Logger.warn "Failed to decode JSON from marathon: " <> reason
+            []
         end
-      {:error, _} -> {:ok, []}
+      {:error, _} -> []
     end
   end
 
   defp register_routes(routes) do
     DynamicRoutes.unregister_all(:heimdall_routes)
-    Enum.map routes, fn {host, path, plug, opts} ->
+    Enum.each routes, fn {host, path, plug, opts} ->
       DynamicRoutes.register(:heimdall_routes, host, path, plug, opts)
     end
     routes
   end
 
-  defp reload_marathon_config(marathon_url) do
+  defp reload_marathon_routes(marathon_url) do
     marathon_url <> "/v2/apps"
     |> request_apps
     |> decode_apps
@@ -70,7 +71,7 @@ defmodule Heimdall.Marathon.BingeWatch do
 
   def call(conn, _opts) do
     marathon_url = Application.fetch_env!(:heimdall, :marathon_url)
-    routes = reload_marathon_config(marathon_url)
+    routes = reload_marathon_routes(marathon_url)
 
     conn
     |> send_resp(200, "ok, routes created: #{inspect(routes)}")

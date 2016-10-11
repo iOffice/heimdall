@@ -16,7 +16,7 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
     :ok
   end
 
-  test "Call sends request to configured forward location" do
+  test "call sends request to configured forward location" do
     conn =
       :get
       |> conn("http://localhost/forward-test")
