@@ -34,7 +34,8 @@ defmodule Heimdall.Mixfile do
       {:rackla, "~> 1.2"},
       {:cowboy, "~> 1.0.0"},
       {:plug, "~> 1.0"},
-      {:httpoison, "~> 0.9.0"}
+      {:httpoison, "~> 0.9.0"},
+      {:mock, "~> 0.1.1", only: :test}
     ]
   end
 end
