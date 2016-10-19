@@ -46,7 +46,7 @@ defmodule Heimdall.Test.DynamicRoutes do
 
   defmacro with_forward_mock(block) do
     quote do
-      with_mock Heimdall.Plug.ForwardRequest, [call: fn conn, _opts -> conn end, init: &(&1)] do
+      with_mock Heimdall.Plug.ForwardRequest, [call: fn conn, _opts -> conn end, init: fn opts -> opts end] do
         unquote(block)
       end
     end
@@ -110,6 +110,28 @@ defmodule Heimdall.Test.DynamicRoutes do
         |> conn("http://localhost/test")
         |> DynamicRoutes.call(tab)
       assert conn.assigns[:test1] == "test"
+    end
+  end
+
+  test "call strips the path that it matches", %{tab: tab} do
+    DynamicRoutes.register(tab, "localhost", "/test", [], {})
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test")
+        |> DynamicRoutes.call(tab)
+      assert conn.path_info == []
+    end
+  end
+
+  test "call leaves the path after what it matched", %{tab: tab} do
+    DynamicRoutes.register(tab, "localhost", "/test", [], {})
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test/another/path")
+        |> DynamicRoutes.call(tab)
+      assert conn.path_info == ["another", "path"]
     end
   end
 end
