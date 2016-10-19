@@ -35,8 +35,13 @@ defmodule Heimdall.Util.PlugUtils do
     end
   end
 
-  def wrap_plugs(plugs, start) do
+  def wrap_plugs(plugs, start) when is_function(start) do
     plugs
     |> Enum.reduce(start, &wrap_plug/2)
+  end
+
+  def wrap_plugs(plugs, start) when is_atom(start) do
+    start_fn = fn conn, opts -> start.call(conn, start.init(opts)) end
+    wrap_plugs(plugs, start_fn)
   end
 end

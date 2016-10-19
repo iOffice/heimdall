@@ -62,6 +62,19 @@ defmodule Heimdall.Test.PlugUtils do
     assert new_conn.assigns[:test2] == "test"
   end
 
+  test "wrap_plugs works for empty list and funciton plug" do
+    plug = &(&1)
+    result = wrap_plugs([], plug)
+    assert plug == result
+  end
+
+  test "wrap_plug works for empty list and module plug" do
+    conn = conn(:get, "http://test.com/")
+    expected = "expected"
+    result = wrap_plugs([], TestWrapPlugOne).(conn, expected)
+    assert result.assigns[:test1] == expected
+  end
+
   test "wrap_plug fails for two non plug params" do
     assert_raise MatchError, "no match of right hand side value: {false, false}", fn ->
       wrap_plug("test1", "test2")
