@@ -25,6 +25,39 @@ defmodule Heimdall.Test.BingeWatch do
     end
   end
 
+  test "build_routes properly parses all given parameters" do
+    labels = %{
+      "heimdall.host" => "localhost",
+      "heimdall.path" => "/test",
+      "heimdall.options" => ~s({"forward_url": "localhost:8080/test"}),
+      "heimdall.filters" => ~s(["Heimdall.Test.BingeWatch.TestPlug"])
+    }
+    app = %{
+      "labels" => labels
+    }
+    expected = {
+      "localhost",
+      "/test",
+      [Heimdall.Test.BingeWatch.TestPlug],
+      %{"forward_url" => "localhost:8080/test"}
+    }
+    result = BingeWatch.build_route(app)
+    assert expected == result
+  end
+
+  test "build routes handles missing labels" do
+    labels = %{
+      "heimdall.host" => "localhost",
+      "heimdall.path" => "/test",
+    }
+    app = %{
+      "labels" => labels
+    }
+    expected = {"localhost", "/test", [], %{}}
+    result = BingeWatch.build_route(app)
+    assert expected == result
+  end
+
   test "call retireves apps from marathon and registers them" do
     app_response = File.read!("test/marathon/app_response.json")
     response = {:ok, %HTTPoison.Response{status_code: 200, body: app_response}}

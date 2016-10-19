@@ -11,12 +11,14 @@ defmodule Heimdall.Marathon.BingeWatch do
     String.to_existing_atom("Elixir." <> module_string)
   end
 
-  defp build_route(app) do
-    host = get_in(app, ["labels", "heimdall.host"])
-    path = get_in(app, ["labels", "heimdall.path"])
-    opts = get_in(app, ["labels", "heimdall.options"])
-    filters_string = get_in(app, ["labels", "heimdall.filters"])
+  def build_route(app) do
+    labels = app |> Map.get("labels")
+    host = labels |> Map.get("heimdall.host")
+    path = labels |> Map.get("heimdall.path")
+    opts_string = labels |> Map.get("heimdall.options", "{}")
+    filters_string = labels |> Map.get("heimdall.filters", "[]")
     {:ok, filters} = Poison.decode(filters_string)
+    {:ok, opts} = Poison.decode(opts_string)
     plugs = Enum.map(filters, &string_to_module/1)
     {host, path, plugs, opts}
   end

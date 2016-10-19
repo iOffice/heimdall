@@ -3,18 +3,9 @@ defmodule Heimdall.Test.DynamicRoutes do
   use Plug.Test
 
   import Plug.Test
+  import Mock
 
   alias Heimdall.DynamicRoutes
-
-  setup_all do
-    {:ok, _pid} = Plug.Adapters.Cowboy.http(Heimdall.Test.TestRouter, [], port: 8082)
-
-    on_exit fn ->
-      :ok = Plug.Adapters.Cowboy.shutdown(Heimdall.Test.TestRouter.HTTP)
-    end
-
-    :ok
-  end
 
   setup context do
     table_name = context.test
@@ -48,54 +39,77 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
   end
 
+  defmodule MockForwardRequest do
+    def init(opts), do: opts
+    def call(conn, _opts), do: conn
+  end
+
+  defmacro with_forward_mock(block) do
+    quote do
+      with_mock Heimdall.Plug.ForwardRequest, [call: fn conn, _opts -> conn end, init: &(&1)] do
+        unquote(block)
+      end
+    end
+  end
+
   test "call after register for a route calls the registered plug", %{tab: tab} do
     DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-    conn =
-      :get
-      |> conn("http://localhost/test")
-      |> DynamicRoutes.call(tab)
-    assert conn.assigns[:test1] == "test"
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test")
+        |> DynamicRoutes.call(tab)
+      assert conn.assigns[:test1] == "test"
+    end
   end
 
   test "call after register and unregister all returns 404", %{tab: tab} do
     DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
     DynamicRoutes.unregister_all(tab)
-    conn =
-      :get
-      |> conn("http://localhost/test")
-      |> DynamicRoutes.call(tab)
-    assert conn.assigns[:test1] != "test"
-    assert conn.status == 404
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test")
+        |> DynamicRoutes.call(tab)
+      assert conn.assigns[:test1] != "test"
+      assert conn.status == 404
+    end
   end
 
   test "call after register and unregister of route returns 404", %{tab: tab} do
     DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
     DynamicRoutes.unregister(tab, "localhost", "/test")
-    conn =
-      :get
-      |> conn("http://localhost/test")
-      |> DynamicRoutes.call(tab)
-    assert conn.assigns[:test1] != "test"
-    assert conn.status == 404
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test")
+        |> DynamicRoutes.call(tab)
+      assert conn.assigns[:test1] != "test"
+      assert conn.status == 404
+    end
   end
 
   test "call finds correct route when there are two routes", %{tab: tab} do
     DynamicRoutes.register(tab, "localhost", "/test1", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
     DynamicRoutes.register(tab, "localhost", "/test2", [Heimdall.Test.DynamicRoutes.TestPlug2], {})
-    conn =
-      :get
-      |> conn("http://localhost/test2")
-      |> DynamicRoutes.call(tab)
-    assert conn.assigns[:test2] == "test"
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test2")
+        |> DynamicRoutes.call(tab)
+      assert conn.assigns[:test2] == "test"
+    end
   end
 
   test "call works when there are multipe plugs", %{tab: tab} do
     plugs = [Heimdall.Test.DynamicRoutes.TestPlug1, Heimdall.Test.DynamicRoutes.TestPlug2]
     DynamicRoutes.register(tab, "localhost", "/test", plugs, {})
-    conn =
-      :get
-      |> conn("http://localhost/test")
-      |> DynamicRoutes.call(tab)
-    assert conn.assigns[:test1] == "test"
+    with_forward_mock do
+      conn =
+        :get
+        |> conn("http://localhost/test")
+        |> DynamicRoutes.call(tab)
+      assert conn.assigns[:test1] == "test"
+    end
   end
 end
