@@ -37,4 +37,14 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
     assert conn.status == 200
     assert conn.resp_body == "forwarded"
   end
+
+  test "changing the path info changes the request path" do
+    forward_url = %{"forward_url" => "http://localhost:8088"}
+    base_conn = conn(:get, "http://some-place.com/change/path/info/test")
+    path_conn = %{ base_conn | path_info: ["forward-test"] }
+    conn = path_conn |> ForwardRequest.call(ForwardRequest.init(forward_url))
+
+    assert conn.status == 200
+    assert conn.resp_body == "forwarded"
+  end
 end

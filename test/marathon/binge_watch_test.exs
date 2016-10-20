@@ -37,7 +37,7 @@ defmodule Heimdall.Test.BingeWatch do
     }
     expected = {
       "localhost",
-      "/test",
+      ["test"],
       [Heimdall.Test.BingeWatch.TestPlug],
       %{"forward_url" => "localhost:8080/test"}
     }
@@ -53,7 +53,7 @@ defmodule Heimdall.Test.BingeWatch do
     app = %{
       "labels" => labels
     }
-    expected = {"localhost", "/test", [], %{}}
+    expected = {"localhost", ["test"], [], %{}}
     result = BingeWatch.build_route(app)
     assert expected == result
   end
@@ -66,7 +66,9 @@ defmodule Heimdall.Test.BingeWatch do
       |> conn("http://localhost:4000/marathon-callback")
       |> BingeWatch.call([])
 
-      assert String.contains?(conn.resp_body, "/test-app")
+      assert String.contains?(conn.resp_body, "ok, routes created:")
+      assert String.contains?(conn.resp_body, "localhost")
+      assert String.contains?(conn.resp_body, "test-app")
     end
   end
 end

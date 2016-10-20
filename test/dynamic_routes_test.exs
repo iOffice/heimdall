@@ -13,14 +13,6 @@ defmodule Heimdall.Test.DynamicRoutes do
     {:ok, tab: context.test}
   end
 
-  test "call without routes gives 404", %{tab: tab} do
-    conn =
-      :get
-      |> conn("http://test.com/")
-      |> DynamicRoutes.call(tab)
-    assert conn.status == 404
-  end
-
   defmodule TestPlug1 do
     def init(opts), do: opts
 
@@ -52,86 +44,121 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
   end
 
-  test "call after register for a route calls the registered plug", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-    with_forward_mock do
+  describe "call" do
+    test "without routes gives 404", %{tab: tab} do
       conn =
         :get
-        |> conn("http://localhost/test")
+        |> conn("http://test.com/")
         |> DynamicRoutes.call(tab)
-      assert conn.assigns[:test1] == "test"
-    end
-  end
-
-  test "call after register and unregister all returns 404", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-    DynamicRoutes.unregister_all(tab)
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test")
-        |> DynamicRoutes.call(tab)
-      assert conn.assigns[:test1] != "test"
       assert conn.status == 404
     end
-  end
 
-  test "call after register and unregister of route returns 404", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-    DynamicRoutes.unregister(tab, "localhost", "/test")
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test")
-        |> DynamicRoutes.call(tab)
-      assert conn.assigns[:test1] != "test"
-      assert conn.status == 404
+    test "after register for a route calls the registered plug", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test1] == "test"
+      end
+    end
+
+    test "after register and unregister all returns 404", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.unregister_all(tab)
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test1] != "test"
+        assert conn.status == 404
+      end
+    end
+
+    test "after register and unregister of route returns 404", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.unregister(tab, "localhost", ["test"])
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test1] != "test"
+        assert conn.status == 404
+      end
+    end
+
+    test "finds correct route when there are two routes", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test1"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.register(tab, "localhost", ["test2"], [Heimdall.Test.DynamicRoutes.TestPlug2], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test2")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test2] == "test"
+      end
+    end
+
+    test "works when there are multipe plugs", %{tab: tab} do
+      plugs = [Heimdall.Test.DynamicRoutes.TestPlug1, Heimdall.Test.DynamicRoutes.TestPlug2]
+      DynamicRoutes.register(tab, "localhost", ["test"], plugs, {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test1] == "test"
+      end
+    end
+
+    test "strips the path that it matches", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.path_info == []
+      end
+    end
+
+    test "leaves the path after what it matched", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test/another/path")
+          |> DynamicRoutes.call(tab)
+        assert conn.path_info == ["another", "path"]
+      end
     end
   end
 
-  test "call finds correct route when there are two routes", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test1", [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-    DynamicRoutes.register(tab, "localhost", "/test2", [Heimdall.Test.DynamicRoutes.TestPlug2], {})
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test2")
-        |> DynamicRoutes.call(tab)
-      assert conn.assigns[:test2] == "test"
+  describe "lookup_path" do
+    test "gives a route if provided path is the same as the route path" do
+      path = ["test", "some", "path"]
+      route = {"localhost", path, [], []}
+      result = DynamicRoutes.lookup_path([route], path)
+      assert route == result
     end
-  end
 
-  test "call works when there are multipe plugs", %{tab: tab} do
-    plugs = [Heimdall.Test.DynamicRoutes.TestPlug1, Heimdall.Test.DynamicRoutes.TestPlug2]
-    DynamicRoutes.register(tab, "localhost", "/test", plugs, {})
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test")
-        |> DynamicRoutes.call(tab)
-      assert conn.assigns[:test1] == "test"
+    test "gives a route if path has additional parts" do
+      route_path = ["test", "some", "path"]
+      longer_path = route_path ++ ["with", "some", "more"]
+      route = {"localhost", route_path, [], []}
+      result = DynamicRoutes.lookup_path([route], longer_path)
+      assert route == result
     end
-  end
 
-  test "call strips the path that it matches", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test", [], {})
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test")
-        |> DynamicRoutes.call(tab)
-      assert conn.path_info == []
-    end
-  end
-
-  test "call leaves the path after what it matched", %{tab: tab} do
-    DynamicRoutes.register(tab, "localhost", "/test", [], {})
-    with_forward_mock do
-      conn =
-        :get
-        |> conn("http://localhost/test/another/path")
-        |> DynamicRoutes.call(tab)
-      assert conn.path_info == ["another", "path"]
+    test "gives nil route if no path doesn't match" do
+      route_path = ["test", "some", "path"]
+      req_path = ["test", "some", "wrong", "path"]
+      route = {"localhost", route_path, [], []}
+      result = DynamicRoutes.lookup_path([route], req_path)
+      assert {nil, nil, [], []} == result
     end
   end
 end

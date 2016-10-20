@@ -2,6 +2,7 @@ defmodule Heimdall.Marathon.BingeWatch do
   require Logger
   import Plug.Conn
   alias Heimdall.DynamicRoutes
+  alias Plug.Router.Utils
 
   def init(opts) do
     opts
@@ -14,7 +15,7 @@ defmodule Heimdall.Marathon.BingeWatch do
   def build_route(app) do
     labels = app |> Map.get("labels")
     host = labels |> Map.get("heimdall.host")
-    path = labels |> Map.get("heimdall.path")
+    path = labels |> Map.get("heimdall.path") |> Utils.split
     opts_string = labels |> Map.get("heimdall.options", "{}")
     filters_string = labels |> Map.get("heimdall.filters", "[]")
     {:ok, filters} = Poison.decode(filters_string)
