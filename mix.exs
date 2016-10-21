@@ -2,12 +2,15 @@ defmodule Heimdall.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :heimdall,
-     version: "0.1.0",
-     elixir: "~> 1.3",
-     build_embedded: Mix.env == :prod,
-     start_permanent: Mix.env == :prod,
-     deps: deps()]
+    [
+      app: :heimdall,
+      version: "0.1.0",
+      elixir: "~> 1.3",
+      build_embedded: Mix.env == :prod,
+      start_permanent: Mix.env == :prod,
+      deps: deps(),
+      package: package()
+   ]
   end
 
   # Configuration for the OTP application
@@ -36,6 +39,15 @@ defmodule Heimdall.Mixfile do
       {:plug, "~> 1.0"},
       {:httpoison, "~> 0.9.0"},
       {:mock, "~> 0.1.1", only: :test}
+    ]
+  end
+
+  defp package do
+    [
+      description: "API gateway for Marathon/Mesos",
+      maintainers: ["Cameron Alexander"],
+      licenses: ["MIT"],
+      links: %{"GitHub" => "http://github.com/emptyflash/heimdall"}
     ]
   end
 end

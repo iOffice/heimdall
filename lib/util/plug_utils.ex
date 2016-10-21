@@ -37,6 +37,7 @@ defmodule Heimdall.Util.PlugUtils do
 
   def wrap_plugs(plugs, start) when is_function(start) do
     plugs
+    |> Enum.reverse()
     |> Enum.reduce(start, &wrap_plug/2)
   end
 
