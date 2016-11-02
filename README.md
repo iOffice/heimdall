@@ -58,7 +58,7 @@ The package can be installed and used as an OTP application in your project:
   3. Create a plug to filter request through
 
     ```elixir
-    defmodule Heimdall.Plug.AddApplicationHeader do
+    defmodule Plug.TestPlug do
       import Plug.Conn
 
       def init(opts), do: opts
@@ -82,13 +82,13 @@ The package can be installed and used as an OTP application in your project:
         "heimdall.path": "/test",
         "heimdall.options": "{\"forward_url\": \"http://localhost:8081/test\"}",
         "heimdall.host": "localhost",
-        "heimdall.filters": "[\"Plug.Test1\", \"Plug.Test2\"]",
+        "heimdall.filters": "[\"Plug.TestPlug\", \"AnotherModule.SomeOtherPlug]",
       },
       ...
     }
     ```
 
-  5. Start your server with `mix server`
+  5. Start your server with `mix server`.
     **NOTE:** Marathon must be available, and Heimdall must be configured to
     reach it before you can start your server. See `config/dev.exs` for a 
     list of configurations.
