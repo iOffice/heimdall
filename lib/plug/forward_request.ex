@@ -28,6 +28,10 @@ defmodule Heimdall.Plug.ForwardRequest do
     |> response
   end
 
+  def call(%Plug.Conn{state: :set} = conn, _opts) do
+    conn
+  end
+
   def call(conn, [forward_url: url]) do
     forward_conn(conn, url)
   end

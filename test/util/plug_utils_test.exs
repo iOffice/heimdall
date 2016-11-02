@@ -62,10 +62,29 @@ defmodule Heimdall.Test.PlugUtils do
     assert new_conn.assigns[:test2] == "test"
   end
 
+  test "wrap_plugs ends the chain if the connection is halted" do
+    conn = conn(:get, "http://test.com/") |> halt
+    new_plug = wrap_plugs([&TestWrapPlugTwo.call/2], &TestWrapPlugOne.call/2)
+    new_conn = new_plug.(conn, "test")
+    assert new_conn.assigns[:test1] != "test"
+    assert new_conn.assigns[:test2] != "test"
+  end
+
+  test "wrap_plug ends the chain if the connection is halted by a plug" do
+    conn = conn(:get, "http://test.com/")
+    halt_plug = fn conn, _opts -> conn |> halt end
+    new_plug = wrap_plugs([TestWrapPlugTwo, halt_plug], TestWrapPlugOne)
+    new_conn = new_plug.(conn, "test")
+    assert new_conn.assigns[:test1] != "test"
+    assert new_conn.assigns[:test2] == "test"
+  end
+
   test "wrap_plugs works for empty list and funciton plug" do
-    plug = &(&1)
-    result = wrap_plugs([], plug)
-    assert plug == result
+    plug = fn conn, _opts -> conn end
+    input = "test"
+    expected = plug.(input, [])
+    result = wrap_plugs([], plug).(input, [])
+    assert expected == result
   end
 
   test "wrap_plug works for empty list and module plug" do

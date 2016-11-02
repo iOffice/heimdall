@@ -47,4 +47,16 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
     assert conn.status == 200
     assert conn.resp_body == "forwarded"
   end
+
+  test "does not forward if conn already has a response" do
+    forward_url = %{"forward_url" => "http://localhost:8088"}
+    conn =
+      :get
+      |> conn("http://localhost/forward-test")
+      |> resp(200, "test")
+      |> ForwardRequest.call(ForwardRequest.init(forward_url))
+
+    assert conn.status == 200
+    assert conn.resp_body != "forwarded"
+  end
 end
