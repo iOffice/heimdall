@@ -22,9 +22,9 @@ Filters can be view as a pipeline of plugs (simple functions that take a
 request and return a changed request or a response), 
 with the final plug forwarding the request to the place it actually needs
  to go. The pipeline is built in the order that the plugs are listed in the
-config. In other words, if `heimdal.filters` is:
-`["Plugs.First", "Plugs.Second"]`
+config. In other words, if `heimdal.filters` is: `["Plugs.First", "Plugs.Second"]`
  the pipeline would look like:
+
 `Request -> Plugs.First -> Plugs.Second -> Heimdall.Plug.ForwardRequest -> Microservice`
 
 Ideally, Heimdall should forward request to a load balancer that knows how to
