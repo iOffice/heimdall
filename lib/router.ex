@@ -3,9 +3,9 @@ defmodule Heimdall.Router do
   The applications router. 
 
   Forwards Marathon callback events coming in from /marathon-callback
-  to `Heimdall.BingeWatch` which will update the dynamic routes.
+  to `Heimdall.Marathon.BingeWatch` which will update the dynamic routes.
 
-  All other traffic gets handled `Heimdall.DynamicRoutes`.
+  All other traffic gets handled by `Heimdall.DynamicRoutes`.
   """
 
   use Plug.Router

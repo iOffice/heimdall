@@ -46,10 +46,10 @@ defmodule Heimdall.DynamicRoutes do
   
   ## Examples
 
-      iex> Heimdall.DynamicRoutes.lookup_path( [{"localhost", ["test", "path"], [], {}}], ["test", "path"])
+      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path"])
       {"localhost", ["test", "path"], [], {}}
 
-      iex> Heimdall.DynamicRoutes.lookup_path( [{"localhost", ["test", "path"], [], {}}], ["test", "path", "but", "longer"])
+      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path", "but", "longer"])
       {"localhost", ["test", "path"], [], {}}
   """
   def lookup_path(routes, conn_path) do
