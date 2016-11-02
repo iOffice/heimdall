@@ -38,7 +38,8 @@ defmodule Heimdall.Mixfile do
       {:cowboy, "~> 1.0.0"},
       {:plug, "~> 1.0"},
       {:httpoison, "~> 0.9.0"},
-      {:mock, "~> 0.1.1", only: :test}
+      {:mock, "~> 0.1.1", only: :test},
+      {:ex_doc, ">= 0.0.0", only: :dev}
     ]
   end
 
