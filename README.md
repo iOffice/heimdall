@@ -29,11 +29,13 @@ config. In other words, if `heimdal.filters` is: `["Plugs.First", "Plugs.Second"
 
 Ideally, Heimdall should forward requests to a load balancer that knows how to
 send each request to an actual instance of the microservice it's trying to get
-to. Some recommended solutions for this are [traefik](https://github.com/containous/traefik), [Minuteman](https://github.com/dcos/minuteman), or your own
+to. Some recommended solutions for this are [traefik](https://github.com/containous/traefik), 
+[Minuteman](https://github.com/dcos/minuteman), or your own
 custom nginx config. The default forward url (ie the location of the load
-balancer) is an OTP application setting, `:default_forward_url`. If you
-wish to set the forward location on a per service basis, you can set 
-`forward_url` in `heimdall.opts` (this gets passed to `Heimdall.Plug.ForwardRequest`)
+balancer) is an OTP application setting, `:default_forward_url` (see `config/dev.exs`
+for an example of the config). If you wish to set the forward location on 
+a per service basis, you can set `forward_url` in `heimdall.opts` (this gets passed to 
+`Heimdall.Plug.ForwardRequest`)
 
 ## Installation
 
@@ -70,7 +72,7 @@ The package can be installed and used as an OTP application in your project:
     end
     ```
 
-  4. Add heimdall labels to your marathon app config
+  4. Add heimdall labels to your Marathon app config
 
     ``` json
     {
