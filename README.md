@@ -1,5 +1,7 @@
 # Heimdall
 
+![Heimdall gif](http://i.giphy.com/tGdiW9jzL64Cs.gif)
+
 Heimdall is an API Gateway for Mesos and Marathon. It routes requests through
 filters dynamically loaded from Marathon before forwarding them
 to their intended services.

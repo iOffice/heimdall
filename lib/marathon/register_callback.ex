@@ -1,7 +1,12 @@
 defmodule Heimdall.Marathon.RegisterCallback do
+
+  @moduledoc """
+  Simple module to register Heimdall's `/marathon-callback` with Marathon.
+  """
+
   require Logger
 
-  def raise_error(reason) do
+  defp raise_error(reason) do
     require_marathon = Application.fetch_env!(:heimdall, :require_marathon)
     if require_marathon do
       raise HTTPoison.Error, reason: reason
@@ -11,7 +16,7 @@ defmodule Heimdall.Marathon.RegisterCallback do
     end
   end
 
-  def subscribe_to_marathon(subscribe_url) do
+  defp subscribe_to_marathon(subscribe_url) do
     headers = %{"Content-Type": "application/json"}
 
     case HTTPoison.post(subscribe_url, "", headers) do
@@ -24,6 +29,14 @@ defmodule Heimdall.Marathon.RegisterCallback do
     end
   end
 
+  @docs """
+  Sends a post requeset to Marathon's event subscriptions with the
+  location Heimdall is running with the path specified as `/marathon-callback`.
+
+  If the application is configured with :require_marathon set to true, this
+  function will raise an error. Otherwise it will just return the error like 
+  `{:error, reason}`.
+  """
   def register(marathon_url, callback_port) do
     {:ok, hostname} = :inet.gethostname
     callback_url = "http://#{hostname}:#{callback_port}/marathon-callback"

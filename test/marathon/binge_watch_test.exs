@@ -14,6 +14,8 @@ defmodule Heimdall.Test.BingeWatch do
     def call(conn, _opts), do: conn
   end
 
+  doctest Heimdall.Marathon.BingeWatch
+
   test "string_to_module gives a module atom if correct" do
     mod = BingeWatch.string_to_module("Heimdall.Test.BingeWatch.TestModule")
     assert mod.test == "test"

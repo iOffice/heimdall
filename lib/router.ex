@@ -1,6 +1,6 @@
 defmodule Heimdall.Router do
   @moduledoc """
-  The applications router. 
+  The applications router plug. 
 
   Forwards Marathon callback events coming in from /marathon-callback
   to `Heimdall.Marathon.BingeWatch` which will update the dynamic routes.
