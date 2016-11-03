@@ -1,22 +1,57 @@
 defmodule Heimdall.DynamicRoutes do
+
+  @moduledoc """
+  Module for dynamically registering routes and routing requests.
+  
+  This is where most of the magic happens. All traffic through the
+  application is routed through this plug.
+
+  Routes are stored in an ETS table to be looked up when the plug
+  is called. When called `Heimdall.DynamicRoutes` search for a route
+  that matches the request, wrap all plugs in the route into one function
+  and call it with the current request. The final plug in the chain will
+  always be `Heimdall.Plug.ForwardRequest`
+  """
+
   import Plug.Conn
   import Heimdall.Util.PlugUtils
   alias Heimdall.Plug.ForwardRequest
 
+  @doc """
+  Registers a route for later lookup
+  """
   def register(tab, host, path, plugs, opts) do
     true = :ets.insert(tab, {host, path, plugs, opts})
   end
 
+  @doc """
+  Unregisters a route given its host and path
+  """
   def unregister(tab, host, path) do
     true = :ets.match_delete(tab, {host, path, :_, :_})
   end
 
+  @doc """
+  Unregisters all routes for a give table
+  """
   def unregister_all(tab) do
     :ets.delete_all_objects(tab)
   end
 
   def init([tab: tab]), do: tab
 
+  @doc """
+  Returns the route in given routes that matches a path as a list (which
+  is how plug conns reperesent them internally).
+  
+  ## Examples
+
+      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path"])
+      {"localhost", ["test", "path"], [], {}}
+
+      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path", "but", "longer"])
+      {"localhost", ["test", "path"], [], {}}
+  """
   def lookup_path(routes, conn_path) do
     Enum.find routes, {nil, nil, [], []}, fn({_, route_path, _, _}) ->
       split_path = Enum.take(conn_path, length(route_path))

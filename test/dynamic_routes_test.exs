@@ -13,6 +13,8 @@ defmodule Heimdall.Test.DynamicRoutes do
     {:ok, tab: context.test}
   end
 
+  doctest Heimdall.DynamicRoutes
+
   defmodule TestPlug1 do
     def init(opts), do: opts
 
