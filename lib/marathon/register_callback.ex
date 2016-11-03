@@ -30,8 +30,8 @@ defmodule Heimdall.Marathon.RegisterCallback do
   end
 
   @docs """
-  Sends a post requeset to Marathon's event subscriptions with the
-  location Heimdall is running with the path specified as `/marathon-callback`.
+  Sends a post request to Marathon's event subscriptions with the
+  location Heimdall is running and the path specified as `/marathon-callback`.
 
   If the application is configured with :require_marathon set to true, this
   function will raise an error. Otherwise it will just return the error like 
