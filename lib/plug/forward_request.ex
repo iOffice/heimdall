@@ -2,10 +2,10 @@ defmodule Heimdall.Plug.ForwardRequest do
 
   @moduledoc """
   This plug acts as a reverse proxy, it will forward any
-  request to a configured location. 
-  
-  This location can be configured either as a default 
-  location by setting the applications `:default_forward_url`, 
+  request to a configured location.
+
+  This location can be configured either as a default
+  location by setting the applications `:default_forward_url`,
   or by providing it in opts to `call/2` like `call(conn, forward_url: url)`
   """
 
@@ -40,7 +40,7 @@ defmodule Heimdall.Plug.ForwardRequest do
     new_url = build_url(forward_url, conn)
     forward_request
     |> Map.put(:url, new_url)
-    |> request(follow_redirect: true)
+    |> request(follow_redirect: true, force_redirect: true)
     |> response
   end
 
