@@ -3,7 +3,7 @@ defmodule Heimdall.Marathon.BingeWatch do
   @moduledoc """
   There's a Marathon playing, and we're gonna BingeWatch it.
 
-  This module is for handling callback events from Marathon. 
+  This module is for handling callback events from Marathon.
   Given any event it will query all running apps, and rebuild
   the dynmaic routes based on the labels of each app.
 
@@ -22,10 +22,10 @@ defmodule Heimdall.Marathon.BingeWatch do
 
   @doc """
   Converts a string to an elixir module atom. Will throw an argument
-  error if the module does not exist. (There is no need to give a 
+  error if the module does not exist. (There is no need to give a
   fully qualified erlang module name, just refer to it as you would
   in elixir)
-  
+
   ## Examples
 
       iex>Heimdall.Marathon.BingeWatch.string_to_module("Heimdall.Marathon.BingeWatch")
@@ -37,7 +37,7 @@ defmodule Heimdall.Marathon.BingeWatch do
 
   @doc """
   Builds a route given a map that represents the Marathon config
-  for an app. The config must have a `labels` map, as well as a 
+  for an app. The config must have a `labels` map, as well as a
   `heimdall.host` and `heimdall.path` in the `labels` map.
 
   `heimdall.filters` and `heimdall.opts` are optional, they will
@@ -55,8 +55,18 @@ defmodule Heimdall.Marathon.BingeWatch do
     {host, path, plugs, opts}
   end
 
-  defp build_routes(apps) do
+  @doc """
+  Builds a list of routest given a list of map that represent
+  the Marathon app configs. It will filter out all of the apps
+  that do not have a proper Heimdall configuration set up (i.e.
+  they don't have a labels with `heimdall.host` and
+  `heimdall.path`.
+  """
+  def build_routes(apps) do
     apps
+    |> Enum.filter(&(&1 |> Map.has_key?("labels")))
+    |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.host")))
+    |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.path")))
     |> Enum.map(&build_route/1)
   end
 
@@ -92,7 +102,7 @@ defmodule Heimdall.Marathon.BingeWatch do
 
   When called, it will make a HTTP request to Marathon to attempt
   to retrieve and decode the list of all running apps. It will
-  use this list to build an internal representation of routes 
+  use this list to build an internal representation of routes
   based on the config for each app, and register the routes with
   `Heimdall.DynamicRoutes` using `Heimdall.DynamicRoutes.register/5`
   """
@@ -107,8 +117,8 @@ defmodule Heimdall.Marathon.BingeWatch do
   @docs """
   The call function that is feed traffic from /marathon-callback.
 
-  Triggers a reload of routes from Marathon.  It will respond with 
-  the created routes if successful, or the reason for for failure 
+  Triggers a reload of routes from Marathon.  It will respond with
+  the created routes if successful, or the reason for for failure
   otherwise.
   """
   def call(conn, _opts) do
