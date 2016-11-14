@@ -32,17 +32,15 @@ defmodule Heimdall.Marathon.RegisterCallback do
   @docs """
   Sends a post request to Marathon's event subscriptions with the
   location Heimdall is running and the path specified as `/marathon-callback`.
+  This location is specified by `:marathon_callback_url` when the app starts
 
   If the application is configured with :require_marathon set to true, this
-  function will raise an error. Otherwise it will just return the error like 
+  function will raise an error. Otherwise it will just return the error like
   `{:error, reason}`.
   """
-  def register(marathon_url, callback_port) do
-    {:ok, hostname} = :inet.gethostname
-    callback_url = "http://#{hostname}:#{callback_port}/marathon-callback"
+  def register(marathon_url, callback_url) do
     subscribe_url =
-      marathon_url <> "/v2/eventSubscriptions?callbackUrl=#{callback_url}"
-
+      marathon_url <> "/v2/eventSubscriptions?callbackUrl=#{callback_url}/marathon-callback"
     subscribe_to_marathon(subscribe_url)
   end
 end

@@ -19,10 +19,14 @@ defmodule Heimdall.Application do
 
     register_marathon = Application.fetch_env!(:heimdall, :register_marathon)
 
+    {:ok, hostname} = :inet.gethostname
+    default_callback = "http://#{hostname}:#{port}"
+    callback_url = Application.get_env(:heimdall, :marathon_callback_url, default_callback)
+
     register_worker = if register_marathon do
       [worker(
         Task,
-        [Heimdall.Marathon.RegisterCallback, :register, [marathon_url, port]],
+        [Heimdall.Marathon.RegisterCallback, :register, [marathon_url, callback_url]],
         restart: :temporary)]
     else
       []
