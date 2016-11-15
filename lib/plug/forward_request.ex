@@ -21,7 +21,7 @@ defmodule Heimdall.Plug.ForwardRequest do
   def init(opts), do: opts
 
   defp build_request_path(path_info) do
-    "/" <> Enum.join(path_info)
+    "/" <> Enum.join(path_info, "/")
   end
 
   defp build_query_string(query_string) do

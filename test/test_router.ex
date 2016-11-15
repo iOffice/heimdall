@@ -9,6 +9,11 @@ defmodule Heimdall.Test.TestRouter do
     |> resp(200, "forwarded")
   end
 
+  get "/forward-test/with/more" do
+    conn
+    |> resp(200, "forwarded")
+  end
+
   get "/test" do
     conn
     |> resp(200, "ok")

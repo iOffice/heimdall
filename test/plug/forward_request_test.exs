@@ -16,26 +16,39 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
     :ok
   end
 
-  test "call sends request to configured forward location" do
-    forward_url = %{"forward_url" => "http://localhost:8088"}
-    conn =
-      :get
-      |> conn("http://localhost/forward-test")
-      |> ForwardRequest.call(ForwardRequest.init(forward_url))
+  describe "call" do
+    test "sends request to configured forward location" do
+      forward_url = %{"forward_url" => "http://localhost:8088"}
+      conn =
+        :get
+        |> conn("http://localhost/forward-test")
+        |> ForwardRequest.call(ForwardRequest.init(forward_url))
 
-    assert conn.status == 200
-    assert conn.resp_body == "forwarded"
-  end
+      assert conn.status == 200
+      assert conn.resp_body == "forwarded"
+    end
 
-  test "call with opts sends request to passed forward location" do
-    forward_url = %{"forward_url" => "http://localhost:8088"}
-    conn =
-      :get
-      |> conn("http://wrong-place.com/forward-test")
-      |> ForwardRequest.call(ForwardRequest.init(forward_url))
+    test "with opts sends request to passed forward location" do
+      forward_url = %{"forward_url" => "http://localhost:8088"}
+      conn =
+        :get
+        |> conn("http://wrong-place.com/forward-test")
+        |> ForwardRequest.call(ForwardRequest.init(forward_url))
 
-    assert conn.status == 200
-    assert conn.resp_body == "forwarded"
+      assert conn.status == 200
+      assert conn.resp_body == "forwarded"
+    end
+
+    test "properly creates request with extended path" do
+      forward_url = %{"forward_url" => "http://localhost:8088"}
+      conn =
+        :get
+        |> conn("http://localhost/forward-test/with/more")
+        |> ForwardRequest.call(ForwardRequest.init(forward_url))
+
+      assert conn.status == 200
+      assert conn.resp_body == "forwarded"
+    end
   end
 
   test "changing the path info changes the request path" do
