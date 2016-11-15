@@ -3,6 +3,7 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
   use Plug.Test
 
   import Plug.Test
+  import ExUnit.CaptureLog
 
   alias Heimdall.Plug.ForwardRequest
 
@@ -48,6 +49,32 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
 
       assert conn.status == 200
       assert conn.resp_body == "forwarded"
+    end
+
+    test "forwards headers from response" do
+      forward_url = %{"forward_url" => "http://localhost:8088"}
+      conn =
+        :get
+        |> conn("http://localhost/forward-test/headers")
+        |> ForwardRequest.call(ForwardRequest.init(forward_url))
+
+      assert conn.status == 200
+      assert conn.resp_body == "forwarded"
+      assert conn |> get_resp_header("x-test-forward") == ["forwarded"]
+    end
+
+    test "gives 500 if cannot connect to service" do
+      forward_url = %{"forward_url" => "http://localhost:50000"}
+
+      capture_log fn ->
+        conn =
+          :get
+          |> conn("http://localhost/forward-test")
+          |> ForwardRequest.call(ForwardRequest.init(forward_url))
+
+        assert conn.status == 500
+        assert conn.resp_body != "forwarded"
+      end
     end
   end
 

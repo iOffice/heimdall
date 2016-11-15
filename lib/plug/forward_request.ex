@@ -10,6 +10,7 @@ defmodule Heimdall.Plug.ForwardRequest do
   """
 
   import Rackla
+  import Plug.Conn
 
   @doc """
   Init will reshape the data coming in from
@@ -35,13 +36,29 @@ defmodule Heimdall.Plug.ForwardRequest do
     base <> request_path <> query_string
   end
 
+  defp set_headers(conn, headers) do
+    Enum.reduce(headers, conn, fn({key, value}, conn) ->
+      put_resp_header(conn, key, value)
+    end)
+  end
+
   defp forward_conn(conn, forward_url) do
     {_, {:ok, forward_request}} = incoming_request_conn(conn)
     new_url = build_url(forward_url, conn)
-    forward_request
-    |> Map.put(:url, new_url)
-    |> request(follow_redirect: true, force_redirect: true)
-    |> response
+    rackla_response =
+      forward_request
+      |> Map.put(:url, new_url)
+      |> request(follow_redirect: true, force_redirect: true, full: true)
+      |> collect
+    case rackla_response do
+      %Rackla.Response{status: status, headers: headers, body: body} ->
+        conn
+        |> resp(status, body)
+        |> set_headers(headers)
+      other ->
+        conn
+        |> resp(500, "An error occured communicating with service, reason: #{inspect(other)}")
+    end
   end
 
   @doc """
