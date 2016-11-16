@@ -29,9 +29,11 @@ defmodule Heimdall.Plug.ForwardRequest do
     if query_string != "", do: "?#{query_string}", else: ""
   end
 
-  defp build_url(base, conn) do
+  def build_url(base, conn) do
+    has_trailing_slash = String.ends_with?(conn.request_path, "/")
+    path_suffix = if has_trailing_slash, do: "/", else: ""
     query_string = build_query_string(conn.query_string)
-    request_path = build_request_path(conn.path_info)
+    request_path = build_request_path(conn.path_info) <> path_suffix
 
     base <> request_path <> query_string
   end
