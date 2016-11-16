@@ -148,6 +148,17 @@ defmodule Heimdall.Test.DynamicRoutes do
         assert conn.status == 404
       end
     end
+
+    test "works with a configuration of / (root route)", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", [], [TestPlug2], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test2] == "test"
+      end
+    end
   end
 
   describe "lookup_path" do
