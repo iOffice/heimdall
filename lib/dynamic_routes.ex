@@ -42,7 +42,8 @@ defmodule Heimdall.DynamicRoutes do
 
   @doc """
   Returns the route in given routes that matches a path as a list (which
-  is how plug conns reperesent them internally).
+  is how plug conns reperesent them internally). Will return `:no_routes`
+  if no routes are found.
   
   ## Examples
 
@@ -53,7 +54,7 @@ defmodule Heimdall.DynamicRoutes do
       {"localhost", ["test", "path"], [], {}}
   """
   def lookup_path(routes, conn_path) do
-    Enum.find routes, {nil, nil, [], []}, fn({_, route_path, _, _}) ->
+    Enum.find routes, :no_routes, fn({_, route_path, _, _}) ->
       split_path = Enum.take(conn_path, length(route_path))
       route_path == split_path
     end
@@ -63,10 +64,14 @@ defmodule Heimdall.DynamicRoutes do
     case :ets.match_object(tab, {conn.host, :_, :_, :_}) do
       [] -> send_resp(conn, 404, "no routes found")
       routes ->
-        {_, path, plugs, opts} = lookup_path(routes, conn.path_info)
-        {base, new_path} = Enum.split(conn.path_info, length(path))
-        new_conn = %{ conn | path_info: new_path, script_name: conn.script_name ++ base }
-        wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
+        case lookup_path(routes, conn.path_info) do
+          {_, path, plugs, opts} ->
+            {base, new_path} = Enum.split(conn.path_info, length(path))
+            new_conn = %{ conn | path_info: new_path, script_name: conn.script_name ++ base }
+            wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
+          _ ->
+            send_resp(conn, 404, "no routes found")
+        end
     end
   end
 end

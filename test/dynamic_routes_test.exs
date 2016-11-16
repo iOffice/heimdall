@@ -137,6 +137,17 @@ defmodule Heimdall.Test.DynamicRoutes do
         assert conn.path_info == ["another", "path"]
       end
     end
+
+    test "matched host with no routes should give 404", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/wrong-path")
+          |> DynamicRoutes.call(tab)
+        assert conn.status == 404
+      end
+    end
   end
 
   describe "lookup_path" do
@@ -155,12 +166,12 @@ defmodule Heimdall.Test.DynamicRoutes do
       assert route == result
     end
 
-    test "gives nil route if no path doesn't match" do
+    test "gives :no_routes if no path doesn't match" do
       route_path = ["test", "some", "path"]
       req_path = ["test", "some", "wrong", "path"]
       route = {"localhost", route_path, [], []}
       result = DynamicRoutes.lookup_path([route], req_path)
-      assert {nil, nil, [], []} == result
+      assert result == :no_routes
     end
   end
 end
