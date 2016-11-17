@@ -184,5 +184,18 @@ defmodule Heimdall.Test.DynamicRoutes do
       result = DynamicRoutes.lookup_path([route], req_path)
       assert result == :no_routes
     end
+
+    test "matches most specific path first" do
+      wrong_path = ["test", "some", "path"]
+      right_path = ["test", "some", "path", "but", "more", "specific"]
+      req_path = right_path ++ ["extra"]
+      expected = {"localhost", right_path, [], []}
+      routes = [
+        {"localhost", wrong_path, [], []},
+        expected
+      ]
+      result = DynamicRoutes.lookup_path(routes, req_path)
+      assert result == expected
+    end
   end
 end

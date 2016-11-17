@@ -54,10 +54,12 @@ defmodule Heimdall.DynamicRoutes do
       {"localhost", ["test", "path"], [], {}}
   """
   def lookup_path(routes, conn_path) do
-    Enum.find routes, :no_routes, fn({_, route_path, _, _}) ->
+    routes
+    |> Enum.sort_by(fn {_, path, _, _} -> -length(path) end)
+    |> Enum.find(:no_routes, fn({_, route_path, _, _}) ->
       split_path = Enum.take(conn_path, length(route_path))
       route_path == split_path
-    end
+    end)
   end
 
   def call(conn, tab) do
