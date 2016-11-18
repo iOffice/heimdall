@@ -77,17 +77,15 @@ defmodule Heimdall.Test.BingeWatch do
     end
   end
 
-  test "call retireves apps from marathon and registers them" do
-    app_response = File.read!("test/marathon/app_response.json")
-    response = {:ok, %HTTPoison.Response{status_code: 200, body: app_response}}
-    with_request_response response do
-      conn = :get
-      |> conn("http://localhost:4000/marathon-callback")
-      |> BingeWatch.call([])
-
-      assert String.contains?(conn.resp_body, "ok, routes created:")
-      assert String.contains?(conn.resp_body, "localhost")
-      assert String.contains?(conn.resp_body, "test-app")
+  describe "handle_info" do
+    test "retireves apps from marathon and registers them on marathon change" do
+      app_response = File.read!("test/marathon/app_response.json")
+      response = {:ok, %HTTPoison.Response{status_code: 200, body: app_response}}
+      with_request_response response do
+        chunk = %HTTPoison.AsyncChunk{chunk: "test", id: make_ref}
+        assert {:noreply, response} = BingeWatch.handle_info(chunk, marathon_url: "test")
+        assert response == [{"localhost", ["test-app"], [Heimdall.Test.BingeWatch.TestPlug], %{}}]
+      end
     end
   end
 end

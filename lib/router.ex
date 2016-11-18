@@ -9,15 +9,11 @@ defmodule Heimdall.Router do
   """
 
   use Plug.Router
-  alias Heimdall.Marathon.BingeWatch
   alias Heimdall.DynamicRoutes
   import Rackla
 
   plug :match
   plug :dispatch
-
-
-  forward "/marathon-callback", to: BingeWatch
 
   get "/heimdall-health-check" do
     Application.fetch_env!(:heimdall, :marathon_url) <> "/ping"

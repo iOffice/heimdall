@@ -3,21 +3,25 @@ defmodule Heimdall.Marathon.BingeWatch do
   @moduledoc """
   There's a Marathon playing, and we're gonna BingeWatch it.
 
-  This module is for handling callback events from Marathon.
+  This module is for handling events streamed from Marathon.
   Given any event it will query all running apps, and rebuild
   the dynmaic routes based on the labels of each app.
 
-  This module is also a plug, traffic from /marathon-callback is
-  routed to `call/2` by `Heimdall.Router`
+  This module implements the `GenServer` behavour, and begins
+  streaming Marathon events to itself in `start_link/0`. 
   """
 
+  use GenServer
+
   require Logger
-  import Plug.Conn
   alias Heimdall.DynamicRoutes
   alias Plug.Router.Utils
 
-  def init(opts) do
-    opts
+  def start_link(args) do
+    marathon_url = Keyword.get(args, :marathon_url)
+    {:ok, pid} = GenServer.start_link(__MODULE__, [marathon_url: marathon_url], [])
+    HTTPoison.get!(marathon_url <> "/v2/events", %{"Accept": "text/event-stream"}, stream_to: pid, recv_timeout: :infinity)
+    {:ok, pid}
   end
 
   @doc """
@@ -115,26 +119,50 @@ defmodule Heimdall.Marathon.BingeWatch do
   end
 
   @docs """
-  The call function that is feed traffic from /marathon-callback.
+  `handle_info/2` handles responses streamed in from Marathon
 
-  Triggers a reload of routes from Marathon.  It will respond with
-  the created routes if successful, or the reason for for failure
-  otherwise.
+  If a response from Marathon gives back anything other than 200,
+  or if there is an error connecting, BingeWatch will stop with
+  the reason.
+
+  Any chunked response other than a carriage return (which is used 
+  as a keep-alive) from Marathon will trigger a reload of the
+  routes config.
+
+  Also other message to `handle_info/2` will be ignored.
   """
-  def call(conn, _opts) do
-    marathon_url = Application.fetch_env!(:heimdall, :marathon_url)
-    maybe_routes = reload_marathon_routes(marathon_url)
+  def handle_info(%HTTPoison.AsyncStatus{code: 200}, state) do 
+    {:noreply, state}
+  end
 
+  def handle_info(%HTTPoison.AsyncStatus{code: status}, state) do
+    {:stop, "Got error code from Marathon: " <> status, state}
+  end
+
+  def handle_info(%HTTPoison.AsyncChunk{chunk: "\r\n"}, state) do
+    {:noreply, state}
+  end
+
+  def handle_info(%HTTPoison.AsyncChunk{chunk: _chunk}, state) do
+    marathon_url = Keyword.get(state, :marathon_url)
+    maybe_routes = reload_marathon_routes(marathon_url)
     case maybe_routes do
-      {:ok, routes} ->
-        conn
-        |> send_resp(200, "ok, routes created: #{inspect(routes)}")
+      {:ok, _routes} ->
+        {:noreply, state}
       {:error, reason} ->
         Logger.warn "Creating routes failed: #{reason}"
-        conn |> send_resp(500, "")
+        {:noreply, state}
       _ ->
         Logger.warn "Creating routes failed for unknown reason"
-        conn |> send_resp(500, "")
+        {:noreply, state}
     end
+  end
+
+  def handle_info(%HTTPoison.Error{reason: reason}, state) do
+    {:stop, reason, state}
+  end
+
+  def handle_info(_msg, state) do
+    {:noreply, state}
   end
 end
