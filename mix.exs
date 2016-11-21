@@ -48,7 +48,7 @@ defmodule Heimdall.Mixfile do
       description: "API gateway for Marathon/Mesos",
       maintainers: ["Cameron Alexander"],
       licenses: ["MIT"],
-      links: %{"GitHub" => "http://github.com/emptyflash/heimdall"}
+      links: %{"GitHub" => "http://github.com/iOffice/heimdall"}
     ]
   end
 end
