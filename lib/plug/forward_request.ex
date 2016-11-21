@@ -11,6 +11,7 @@ defmodule Heimdall.Plug.ForwardRequest do
 
   import Rackla
   import Plug.Conn
+  require Logger
 
   @doc """
   Init will reshape the data coming in from
@@ -47,10 +48,16 @@ defmodule Heimdall.Plug.ForwardRequest do
   defp forward_conn(conn, forward_url) do
     {_, {:ok, forward_request}} = incoming_request_conn(conn)
     new_url = build_url(forward_url, conn)
+    rackla_opts = [
+      follow_redirect: true, 
+      force_redirect: true, 
+      full: true,
+      receive_timeout: 15_000
+    ]
     rackla_response =
       forward_request
       |> Map.put(:url, new_url)
-      |> request(follow_redirect: true, force_redirect: true, full: true)
+      |> request(rackla_opts)
       |> collect
     case rackla_response do
       %Rackla.Response{status: status, headers: headers, body: body} ->
@@ -58,6 +65,7 @@ defmodule Heimdall.Plug.ForwardRequest do
         |> resp(status, body)
         |> set_headers(headers)
       other ->
+        Logger.warn("Problem connecting to service: #{inspect(other)}")
         conn
         |> resp(500, "An error occured communicating with service, reason: #{inspect(other)}")
     end

@@ -83,8 +83,7 @@ defmodule Heimdall.Test.BingeWatch do
       response = {:ok, %HTTPoison.Response{status_code: 200, body: app_response}}
       with_request_response response do
         chunk = %HTTPoison.AsyncChunk{chunk: "test", id: make_ref}
-        assert {:noreply, response} = BingeWatch.handle_info(chunk, marathon_url: "test")
-        assert response == [{"localhost", ["test-app"], [Heimdall.Test.BingeWatch.TestPlug], %{}}]
+        assert {:noreply, _state} = BingeWatch.handle_info(chunk, marathon_url: "test")
       end
     end
   end
