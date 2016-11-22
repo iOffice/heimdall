@@ -100,6 +100,21 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
     end
   end
 
+  describe "init" do
+    test "called with a map and valid keys returns a keyword list" do
+      input = %{"forward_url" => "test"}
+      result = ForwardRequest.init(input)
+      assert Keyword.get(result, :forward_url) == "test"
+    end
+
+    test "called with map and invalid keys throws an error" do
+      assert_raise ArgumentError, "argument error", fn ->
+        input = %{"wrong_key" => "test"}
+        ForwardRequest.init(input)
+      end
+    end
+  end
+
   describe "build_url" do
     test "respects trailing slash" do
       conn = :get |> conn("http://localhost/forward-test/")

@@ -19,7 +19,10 @@ defmodule Heimdall.Plug.ForwardRequest do
   with the key `"forward_url"` and comes out as a list
   with the atom `:forward_url`.
   """
-  def init(%{"forward_url" => url}), do: [forward_url: url]
+  def init(%{} = opts) do 
+    opts
+    |> Enum.into([], fn {k, v} -> {String.to_existing_atom(k), v} end)
+  end
   def init(opts), do: opts
 
   defp build_request_path(path_info) do
@@ -45,15 +48,15 @@ defmodule Heimdall.Plug.ForwardRequest do
     end)
   end
 
-  defp forward_conn(conn, forward_url) do
+  defp forward_conn(conn, forward_url, opts) do
     {_, {:ok, forward_request}} = incoming_request_conn(conn)
     new_url = build_url(forward_url, conn)
     rackla_opts = [
       follow_redirect: true, 
       force_redirect: true, 
       full: true,
-      receive_timeout: 15_000
-    ]
+      receive_timeout: 10_000
+    ] |> Keyword.merge(opts)
     rackla_response =
       forward_request
       |> Map.put(:url, new_url)
@@ -83,12 +86,9 @@ defmodule Heimdall.Plug.ForwardRequest do
     conn
   end
 
-  def call(conn, [forward_url: url]) do
-    forward_conn(conn, url)
-  end
-
-  def call(conn, _opts) do
-    url = Application.fetch_env!(:heimdall, :default_forward_url)
-    forward_conn(conn, url)
+  def call(conn, opts) do
+    default_url = Application.fetch_env!(:heimdall, :default_forward_url)
+    url = opts |> Keyword.get(:forward_url, default_url)
+    forward_conn(conn, url, opts)
   end
 end
