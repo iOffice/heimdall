@@ -68,7 +68,7 @@ defmodule Heimdall.Plug.ForwardRequest do
         |> resp(status, body)
         |> set_headers(headers)
       other ->
-        Logger.warn("Problem connecting to service: #{inspect(other)}")
+        Logger.warn("Problem connecting to service: #{inspect(other)}\nRequest path: #{inspect(new_url)}")
         conn
         |> resp(500, "An error occured communicating with service, reason: #{inspect(other)}")
     end
