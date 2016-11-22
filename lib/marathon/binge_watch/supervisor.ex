@@ -1,14 +1,15 @@
 defmodule Heimdall.Marathon.BingeWatch.Supervisor do
   use Supervisor
 
+  @name Heimdall.Marathon.BingeWatch.Supervisor
+
   def start_link(args) do
-    Supervisor.start_link(__MODULE__, args)
+    Supervisor.start_link(__MODULE__, args, name: @name)
   end
 
   def init(args) do
-    marathon_url = Keyword.get(args, :marathon_url)
     children = [
-      worker(Heimdall.Marathon.BingeWatch, [[marathon_url: marathon_url]], restart: :permanent)
+      worker(Heimdall.Marathon.BingeWatch, [args], restart: :permanent)
     ]
 
     supervise(children, strategy: :one_for_one, max_retries: :infinity, max_seconds: 1)
