@@ -122,6 +122,12 @@ defmodule Heimdall.Test.Plug.ForwardRequestTest do
       assert result == "test-base/forward-test/"
     end
 
+    test "doesn't add extra slash if path is empty" do
+      conn = :get |> conn("http://localhost/")
+      result = ForwardRequest.build_url("test-base", conn)
+      assert result == "test-base/"
+    end
+
     test "respects query params" do
       conn = :get |> conn("http://localhost/forward-test?test=test")
       result = ForwardRequest.build_url("test-base", conn)
