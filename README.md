@@ -86,7 +86,7 @@ The package can be installed and used as an OTP application in your project:
         "heimdall.path": "/test",
         "heimdall.options": "{\"forward_url\": \"http://localhost:8081/test\"}",
         "heimdall.host": "localhost",
-        "heimdall.filters": "[\"Plug.TestPlug\", \"AnotherModule.SomeOtherPlug]",
+        "heimdall.filters": "[\"Plug.TestPlug\", \"AnotherModule.SomeOtherPlug\"]",
       },
       ...
     }
@@ -96,3 +96,7 @@ The package can be installed and used as an OTP application in your project:
     **NOTE:** Marathon must be available, and Heimdall must be configured to
     reach it before you can start your server. See `config/dev.exs` for a 
     list of configurations.
+
+  6. Your app can now be reached at `localhost:4000/test`. This will run any
+     Plugs configured in your `heimdall.filters` before forwarding the request
+     to your app.
