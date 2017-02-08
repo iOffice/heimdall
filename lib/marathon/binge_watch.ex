@@ -102,10 +102,10 @@ defmodule Heimdall.Marathon.BingeWatch do
     path = labels |> Map.get("heimdall.path") |> Utils.split
     opts_string = labels |> Map.get("heimdall.options", "{}")
     filters_string = labels |> Map.get("heimdall.filters", "[]")
-    {:ok, filters} = Poison.decode(filters_string)
-    {:ok, opts} = Poison.decode(opts_string)
-    plugs = Enum.map(filters, &string_to_module/1)
-    {host, path, plugs, opts}
+    with {:ok, filters} <- Poison.decode(filters_string),
+         {:ok, opts} <- Poison.decode(opts_string),
+         plugs = Enum.map(filters, &string_to_module/1),
+    do: {host, path, plugs, opts}
   end
 
   @doc """
@@ -121,6 +121,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.host")))
     |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.path")))
     |> Enum.map(&build_route/1)
+    |> Enum.filter(&!match?({:error, _}, &1))
   end
 
   defp request_apps(url) do
