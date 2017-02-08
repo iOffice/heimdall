@@ -62,6 +62,32 @@ defmodule Heimdall.Test.BingeWatch do
       result = BingeWatch.build_route(app)
       assert expected == result
     end
+
+    test "should return error when there is an error decoding filters" do
+      labels = %{
+        "heimdall.host" => "localhost",
+        "heimdall.path" => "/test",
+        "heimdall.filters" => "[}"
+      }
+      app = %{
+        "labels" => labels
+      }
+      result = BingeWatch.build_route(app)
+      assert {:error, _} = result
+    end
+
+    test "should return error when there is an error decoding opts" do
+      labels = %{
+        "heimdall.host" => "localhost",
+        "heimdall.path" => "/test",
+        "heimdall.options" => "[}"
+      }
+      app = %{
+        "labels" => labels
+      }
+      result = BingeWatch.build_route(app)
+      assert {:error, _} = result
+    end
   end
 
   describe "build_routes" do
@@ -71,6 +97,20 @@ defmodule Heimdall.Test.BingeWatch do
         %{"labels" => %{}},
         %{"labels" => %{"heimdall.host" => "host"}},
         %{"labels" => %{"heimdall.path" => "path"}}
+      ]
+      result = BingeWatch.build_routes(apps)
+      assert result == []
+    end
+
+    test "filters out apps with invalid json in options or filters" do
+      baseApp =
+        %{
+          "heimdall.host" => "host",
+          "heimdall.path" => "path"
+        }
+      apps = [
+        %{"labels" => Map.put(baseApp, "heimdall.filters", "{]")},
+        %{"labels" => Map.put(baseApp, "heimdall.options", "{]")},
       ]
       result = BingeWatch.build_routes(apps)
       assert result == []
