@@ -127,6 +127,7 @@ defmodule Heimdall.Test.DynamicRoutes do
       end
     end
 
+    @tag only: true
     test "leaves the path after what it matched", %{tab: tab} do
       DynamicRoutes.register(tab, "localhost", ["test"], [], {})
       with_forward_mock do
