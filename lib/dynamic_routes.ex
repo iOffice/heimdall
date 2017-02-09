@@ -17,6 +17,10 @@ defmodule Heimdall.DynamicRoutes do
   import Heimdall.Util.PlugUtils
   alias Heimdall.Plug.ForwardRequest
 
+  def new(table_name) do
+    :ets.new(table_name, [:named_table, :set, :public, keypos: 2])
+  end
+
   @doc """
   Registers a route for later lookup
   """
@@ -49,7 +53,7 @@ defmodule Heimdall.DynamicRoutes do
 
   @doc """
   Returns the route in registered routes that matches a path as a list (which
-  is how plug conns reperesent them internally). Will return `:no_routes`
+  is how plug conns reperesent them internally). Will return `nil`
   if no routes are found.
   
   ## Examples
@@ -68,10 +72,7 @@ defmodule Heimdall.DynamicRoutes do
     pattern = match_spec_patterns(host, conn_path)
     :ets.select(tab, pattern)
     |> Enum.sort_by(fn {_, path, _, _} -> -length(path) end) # Take the most specific (longest) paths first
-    |> Enum.find(:no_routes, fn({_, route_path, _, _}) -> # Find route that's a prefix of the request path
-      split_path = Enum.take(conn_path, length(route_path))
-      route_path == split_path
-    end)
+    |> List.first
   end
 
   defp match_spec_patterns(host, path) do
@@ -86,8 +87,7 @@ defmodule Heimdall.DynamicRoutes do
     |> Enum.scan([], &(&2 ++ [&1])) # Enumerates possible path prefixes to match
     |> (fn p -> if length(p) == 0, do: [[]], else: p end).() # Handle if the list is empty
     |> Enum.flat_map(fn prefix -> [ # Generate match specs
-      {{host, prefix, :_, :_}, [], [:"$_"]}, # Will only match this prefix
-      {{host, prefix ++ :_, :_, :_}, [], [:"$_"]} # Will match this prefix followed by anything
+      {{host, prefix, :_, :_}, [], [:"$_"]} # Will only match this prefix
     ] end)
   end
 

@@ -14,7 +14,7 @@ defmodule Heimdall.Application do
     port = Application.get_env(:heimdall, :port, 4000)
     port = if is_binary(port), do: String.to_integer(port), else: port
 
-    :ets.new(:heimdall_routes, [:named_table, :bag, :public])
+    Heimdall.DynamicRoutes.new(:heimdall_routes)
 
     marathon_url = Application.fetch_env!(:heimdall, :marathon_url)
     register_marathon = Application.fetch_env!(:heimdall, :register_marathon)

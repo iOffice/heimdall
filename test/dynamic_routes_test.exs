@@ -7,10 +7,16 @@ defmodule Heimdall.Test.DynamicRoutes do
 
   alias Heimdall.DynamicRoutes
 
+  setup_all do
+    # Setup table for doctests
+    table_name = :some_table
+    ^table_name = DynamicRoutes.new(table_name)
+    :ok
+  end
+
   setup context do
     table_name = context.test
-    ^table_name = :ets.new(table_name, [:named_table, :bag, :public])
-    :some_table = :ets.new(:some_table, [:named_table, :bag, :public])
+    ^table_name = DynamicRoutes.new(table_name)
     {:ok, tab: context.test}
   end
 
@@ -186,7 +192,7 @@ defmodule Heimdall.Test.DynamicRoutes do
       route = {"localhost", route_path, [], []}
       DynamicRoutes.register(tab, route)
       result = DynamicRoutes.lookup_path(tab, "localhost", req_path)
-      assert result == :no_routes
+      assert result == nil
     end
 
     test "matches most specific path first", %{tab: tab} do
