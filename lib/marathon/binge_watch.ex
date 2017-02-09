@@ -143,7 +143,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     end
   end
 
-  defp register_routes(routes) do
+  def register_routes(routes) do
     DynamicRoutes.unregister_all(:heimdall_routes)
     Enum.each routes, fn {host, path, plug, opts} ->
       DynamicRoutes.register(:heimdall_routes, host, path, plug, opts)
