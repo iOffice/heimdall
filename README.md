@@ -45,52 +45,52 @@ The package can be installed and used as an OTP application in your project:
 
   1. Add `heimdall` to your list of dependencies in `mix.exs`:
 
-    ```elixir
-    def deps do
-      [{:heimdall, "~> 0.1.0"}]
-    end
-    ```
+     ```elixir
+     def deps do
+       [{:heimdall, "~> 0.1.0"}]
+     end
+     ```
 
   2. Ensure `heimdall` is started before your application:
 
-    ```elixir
-    def application do
-      [applications: [:heimdall]]
-    end
-    ```
+     ```elixir
+     def application do
+       [applications: [:heimdall]]
+     end
+     ```
 
   3. Create a plug through which to filter requests
 
-    ```elixir
-    defmodule Plug.TestPlug do
-      import Plug.Conn
+     ```elixir
+     defmodule Plug.TestPlug do
+       import Plug.Conn
 
-      def init(opts), do: opts
+       def init(opts), do: opts
 
-      def call(conn, _opts) do
-        conn
-        |> put_req_header("some-header", "a header value")
-      end
-    end
-    ```
+       def call(conn, _opts) do
+         conn
+         |> put_req_header("some-header", "a header value")
+       end
+     end
+     ```
 
   4. Add heimdall labels to your Marathon app config
 
-    ``` json
-    {
-      "id": "/test-app",
-      "cmd": null,
-      "cpus": 1,
-      ...
-      "labels": {
-        "heimdall.path": "/test",
-        "heimdall.options": "{\"forward_url\": \"http://localhost:8081/test\"}",
-        "heimdall.host": "localhost",
-        "heimdall.filters": "[\"Plug.TestPlug\", \"AnotherModule.SomeOtherPlug\"]",
-      },
-      ...
-    }
-    ```
+     ``` json
+     {
+       "id": "/test-app",
+       "cmd": null,
+       "cpus": 1,
+       ...
+       "labels": {
+         "heimdall.path": "/test",
+         "heimdall.options": "{\"forward_url\": \"http://localhost:8081/test\"}",
+         "heimdall.host": "localhost",
+         "heimdall.filters": "[\"Plug.TestPlug\", \"AnotherModule.SomeOtherPlug\"]",
+       },
+       ...
+     }
+     ```
 
   5. Start your server with `mix server`.
     **NOTE:** Marathon must be available, and Heimdall must be configured to
