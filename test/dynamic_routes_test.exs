@@ -7,9 +7,16 @@ defmodule Heimdall.Test.DynamicRoutes do
 
   alias Heimdall.DynamicRoutes
 
+  setup_all do
+    # Setup table for doctests
+    table_name = :some_table
+    ^table_name = DynamicRoutes.new(table_name)
+    :ok
+  end
+
   setup context do
     table_name = context.test
-    ^table_name = :ets.new(table_name, [:named_table, :bag, :public])
+    ^table_name = DynamicRoutes.new(table_name)
     {:ok, tab: context.test}
   end
 
@@ -162,30 +169,33 @@ defmodule Heimdall.Test.DynamicRoutes do
   end
 
   describe "lookup_path" do
-    test "gives a route if provided path is the same as the route path" do
+    test "gives a route if provided path is the same as the route path", %{tab: tab} do
       path = ["test", "some", "path"]
       route = {"localhost", path, [], []}
-      result = DynamicRoutes.lookup_path([route], path)
+      DynamicRoutes.register(tab, route)
+      result = DynamicRoutes.lookup_path(tab, "localhost", path)
       assert route == result
     end
 
-    test "gives a route if path has additional parts" do
+    test "gives a route if path has additional parts", %{tab: tab} do
       route_path = ["test", "some", "path"]
       longer_path = route_path ++ ["with", "some", "more"]
       route = {"localhost", route_path, [], []}
-      result = DynamicRoutes.lookup_path([route], longer_path)
+      DynamicRoutes.register(tab, route)
+      result = DynamicRoutes.lookup_path(tab, "localhost", longer_path)
       assert route == result
     end
 
-    test "gives :no_routes if no path doesn't match" do
+    test "gives :no_routes if no path doesn't match", %{tab: tab} do
       route_path = ["test", "some", "path"]
       req_path = ["test", "some", "wrong", "path"]
       route = {"localhost", route_path, [], []}
-      result = DynamicRoutes.lookup_path([route], req_path)
-      assert result == :no_routes
+      DynamicRoutes.register(tab, route)
+      result = DynamicRoutes.lookup_path(tab, "localhost", req_path)
+      assert result == nil
     end
 
-    test "matches most specific path first" do
+    test "matches most specific path first", %{tab: tab} do
       wrong_path = ["test", "some", "path"]
       right_path = ["test", "some", "path", "but", "more", "specific"]
       req_path = right_path ++ ["extra"]
@@ -194,7 +204,8 @@ defmodule Heimdall.Test.DynamicRoutes do
         {"localhost", wrong_path, [], []},
         expected
       ]
-      result = DynamicRoutes.lookup_path(routes, req_path)
+      Enum.each(routes, &DynamicRoutes.register(tab, &1))
+      result = DynamicRoutes.lookup_path(tab, "localhost", req_path)
       assert result == expected
     end
   end

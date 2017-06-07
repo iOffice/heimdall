@@ -17,11 +17,22 @@ defmodule Heimdall.DynamicRoutes do
   import Heimdall.Util.PlugUtils
   alias Heimdall.Plug.ForwardRequest
 
+  def new(table_name) do
+    :ets.new(table_name, [:named_table, :set, :public, keypos: 2])
+  end
+
+  @doc """
+  Registers a route for later lookup
+  """
+  def register(tab, {_, _, _, _} = route) do
+    true = :ets.insert(tab, route)
+  end
+
   @doc """
   Registers a route for later lookup
   """
   def register(tab, host, path, plugs, opts) do
-    true = :ets.insert(tab, {host, path, plugs, opts})
+    register(tab, {host, path, plugs, opts})
   end
 
   @doc """
@@ -41,39 +52,53 @@ defmodule Heimdall.DynamicRoutes do
   def init([tab: tab]), do: tab
 
   @doc """
-  Returns the route in given routes that matches a path as a list (which
-  is how plug conns reperesent them internally). Will return `:no_routes`
+  Returns the route in registered routes that matches a path as a list (which
+  is how plug conns reperesent them internally). Will return `nil`
   if no routes are found.
   
   ## Examples
 
-      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path"])
-      {"localhost", ["test", "path"], [], {}}
+      iex> Heimdall.DynamicRoutes.register(:some_table, "localhost", ["test", "path"], [], [])
+      true
+      iex> Heimdall.DynamicRoutes.lookup_path(:some_table, "localhost", ["test", "path"])
+      {"localhost", ["test", "path"], [], []}
 
-      iex> Heimdall.DynamicRoutes.lookup_path([{"localhost", ["test", "path"], [], {}}], ["test", "path", "but", "longer"])
-      {"localhost", ["test", "path"], [], {}}
+      iex> Heimdall.DynamicRoutes.register(:some_table, "localhost", ["test", "path"], [], [])
+      true
+      iex> Heimdall.DynamicRoutes.lookup_path(:some_table, "localhost", ["test", "path", "but", "longer"])
+      {"localhost", ["test", "path"], [], []}
   """
-  def lookup_path(routes, conn_path) do
-    routes
-    |> Enum.sort_by(fn {_, path, _, _} -> -length(path) end)
-    |> Enum.find(:no_routes, fn({_, route_path, _, _}) ->
-      split_path = Enum.take(conn_path, length(route_path))
-      route_path == split_path
-    end)
+  def lookup_path(tab, host, conn_path) do
+    pattern = match_spec_patterns(host, conn_path)
+    :ets.select(tab, pattern)
+    |> Enum.sort_by(fn {_, path, _, _} -> -length(path) end) # Take the most specific (longest) paths first
+    |> List.first
+  end
+
+  defp match_spec_patterns(host, path) do
+    # This is Erlang Match Spec, I know it's weird
+    # but it's basically a function pattern match
+    # that follows the pattern [{pattern, guards, return}, ...]
+    # http://erlang.org/doc/apps/erts/match_spec.html
+    # 
+    # Here we're saying match anything with the host
+    # and any part of the path as a prefix
+    path
+    |> Enum.scan([], &(&2 ++ [&1])) # Enumerates possible path prefixes to match
+    |> (fn p -> if length(p) == 0, do: [[]], else: p end).() # Handle if the list is empty
+    |> Enum.flat_map(fn prefix -> [ # Generate match specs
+      {{host, prefix, :_, :_}, [], [:"$_"]} # Will only match this prefix
+    ] end)
   end
 
   def call(conn, tab) do
-    case :ets.match_object(tab, {conn.host, :_, :_, :_}) do
-      [] -> send_resp(conn, 404, "no routes found")
-      routes ->
-        case lookup_path(routes, conn.path_info) do
-          {_, path, plugs, opts} ->
-            {base, new_path} = Enum.split(conn.path_info, length(path))
-            new_conn = %{ conn | path_info: new_path, script_name: conn.script_name ++ base }
-            wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
-          _ ->
-            send_resp(conn, 404, "no routes found")
-        end
+    case lookup_path(tab, conn.host, conn.path_info) do
+      {_, path, plugs, opts} ->
+        {base, new_path} = Enum.split(conn.path_info, length(path))
+        new_conn = %{ conn | path_info: new_path, script_name: conn.script_name ++ base }
+        wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
+      _ -> 
+        send_resp(conn, 404, "no routes found")
     end
   end
 end
