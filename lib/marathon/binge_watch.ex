@@ -70,7 +70,8 @@ defmodule Heimdall.Marathon.BingeWatch do
   end
 
   defp connect_to_marathon(marathon_url) do
-    HTTPoison.get(marathon_url <> "/v2/events", %{"Accept": "text/event-stream"}, stream_to: self, recv_timeout: 15_000)
+    HTTPoison.get(marathon_url <> "/v2/events", %{"Accept": "text/event-stream"}, 
+                  stream_to: self(), recv_timeout: 15_000)
   end
 
   @doc """
@@ -97,17 +98,28 @@ defmodule Heimdall.Marathon.BingeWatch do
   default to an empty list and tuple respectively.
   """
   def build_route(app) do
-    labels = app |> Map.get("labels")
-    host = labels |> Map.get("heimdall.host")
-    path = labels |> Map.get("heimdall.path") |> Utils.split
-    opts_string = labels |> Map.get("heimdall.options", "{}")
-    filters_string = labels |> Map.get("heimdall.filters", "[]")
-    strip_path = labels |> Map.get("heimdall.strip_path", "true") == "true"
-    proxy_path = labels |> Map.get("heimdall.proxy_path", "/") |> Utils.split
+    host = app |> Map.get("heimdall.host")
+    path = app |> Map.get("heimdall.path") |> Utils.split
+    opts_string = app |> Map.get("heimdall.options", "{}")
+    filters_string = app |> Map.get("heimdall.filters", "[]")
+    strip_path = app |> Map.get("heimdall.strip_path", "true") == "true"
+    proxy_path = app |> Map.get("heimdall.proxy_path", "/") |> Utils.split
     with {:ok, filters} <- Poison.decode(filters_string),
          {:ok, opts} <- Poison.decode(opts_string),
          plugs = Enum.map(filters, &string_to_module/1),
     do: {host, path, plugs, opts, strip_path, proxy_path}
+  end
+
+  defp build_additional_entrypoint_routes(app) do
+    labels = app |> Map.get("labels")
+    entrypoints_string = labels |> Map.get("heimdall.entrypoints", "[]")
+    base = labels |> Map.delete("heimdall.entrypoints")
+    case Poison.decode(entrypoints_string) do
+      {:ok, entrypoints} -> 
+        [labels | Enum.map(entrypoints, &Map.merge(base, &1))]
+      _ -> 
+        [labels]
+    end
   end
 
   @doc """
@@ -120,8 +132,9 @@ defmodule Heimdall.Marathon.BingeWatch do
   def build_routes(apps) do
     apps
     |> Enum.filter(&(&1 |> Map.has_key?("labels")))
-    |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.host")))
-    |> Enum.filter(&(&1 |> Map.get("labels") |> Map.has_key?("heimdall.path")))
+    |> Enum.flat_map(&build_additional_entrypoint_routes/1)
+    |> Enum.filter(&(&1 |> Map.has_key?("heimdall.host")))
+    |> Enum.filter(&(&1 |> Map.has_key?("heimdall.path")))
     |> Enum.map(&build_route/1)
     |> Enum.filter(&!match?({:error, _}, &1))
   end
@@ -153,7 +166,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     routes
   end
 
-  @docs """
+  @doc """
   Reloads and register routes from Marathon.
 
   When called, it will make a HTTP request to Marathon to attempt
@@ -170,7 +183,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     do: {:ok, register_routes(routes)}
   end
 
-  @docs """
+  @doc """
   `handle_info/2` handles responses streamed in from Marathon
 
   If a response from Marathon gives back anything other than 200,
