@@ -171,7 +171,7 @@ defmodule Heimdall.Test.DynamicRoutes do
   describe "lookup_path" do
     test "gives a route if provided path is the same as the route path", %{tab: tab} do
       path = ["test", "some", "path"]
-      route = {"localhost", path, [], []}
+      route = {"localhost", path, [], [], true}
       DynamicRoutes.register(tab, route)
       result = DynamicRoutes.lookup_path(tab, "localhost", path)
       assert route == result
@@ -180,7 +180,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     test "gives a route if path has additional parts", %{tab: tab} do
       route_path = ["test", "some", "path"]
       longer_path = route_path ++ ["with", "some", "more"]
-      route = {"localhost", route_path, [], []}
+      route = {"localhost", route_path, [], [], true}
       DynamicRoutes.register(tab, route)
       result = DynamicRoutes.lookup_path(tab, "localhost", longer_path)
       assert route == result
@@ -199,7 +199,7 @@ defmodule Heimdall.Test.DynamicRoutes do
       wrong_path = ["test", "some", "path"]
       right_path = ["test", "some", "path", "but", "more", "specific"]
       req_path = right_path ++ ["extra"]
-      expected = {"localhost", right_path, [], []}
+      expected = {"localhost", right_path, [], [], true}
       routes = [
         {"localhost", wrong_path, [], []},
         expected
