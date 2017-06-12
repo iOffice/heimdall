@@ -102,10 +102,12 @@ defmodule Heimdall.Marathon.BingeWatch do
     path = labels |> Map.get("heimdall.path") |> Utils.split
     opts_string = labels |> Map.get("heimdall.options", "{}")
     filters_string = labels |> Map.get("heimdall.filters", "[]")
+    strip_path = labels |> Map.get("heimdall.strip_path", "true") == "true"
+    proxy_path = labels |> Map.get("heimdall.proxy_path", "/") |> Utils.split
     with {:ok, filters} <- Poison.decode(filters_string),
          {:ok, opts} <- Poison.decode(opts_string),
          plugs = Enum.map(filters, &string_to_module/1),
-    do: {host, path, plugs, opts}
+    do: {host, path, plugs, opts, strip_path, proxy_path}
   end
 
   @doc """
@@ -145,8 +147,8 @@ defmodule Heimdall.Marathon.BingeWatch do
 
   def register_routes(routes) do
     DynamicRoutes.unregister_all(:heimdall_routes)
-    Enum.each routes, fn {host, path, plug, opts} ->
-      DynamicRoutes.register(:heimdall_routes, host, path, plug, opts)
+    Enum.each routes, fn route ->
+      DynamicRoutes.register(:heimdall_routes, route)
     end
     routes
   end
