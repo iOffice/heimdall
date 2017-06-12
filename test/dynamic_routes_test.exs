@@ -166,12 +166,34 @@ defmodule Heimdall.Test.DynamicRoutes do
         assert conn.assigns[:test2] == "test"
       end
     end
+
+    test "appends proxy path to beginning of matched request", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], {}, true, ["proxy"])
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/path")
+          |> DynamicRoutes.call(tab)
+        assert conn.path_info == ["proxy"]
+      end
+    end
+
+    test "appends proxy path before at the begging without stripping path", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], {}, false, ["proxy"])
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/path")
+          |> DynamicRoutes.call(tab)
+        assert conn.path_info == ["proxy", "path"]
+      end
+    end
   end
 
   describe "lookup_path" do
     test "gives a route if provided path is the same as the route path", %{tab: tab} do
       path = ["test", "some", "path"]
-      route = {"localhost", path, [], [], true}
+      route = {"localhost", path, [], [], true, []}
       DynamicRoutes.register(tab, route)
       result = DynamicRoutes.lookup_path(tab, "localhost", path)
       assert route == result
@@ -180,7 +202,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     test "gives a route if path has additional parts", %{tab: tab} do
       route_path = ["test", "some", "path"]
       longer_path = route_path ++ ["with", "some", "more"]
-      route = {"localhost", route_path, [], [], true}
+      route = {"localhost", route_path, [], [], true, []}
       DynamicRoutes.register(tab, route)
       result = DynamicRoutes.lookup_path(tab, "localhost", longer_path)
       assert route == result
@@ -199,7 +221,7 @@ defmodule Heimdall.Test.DynamicRoutes do
       wrong_path = ["test", "some", "path"]
       right_path = ["test", "some", "path", "but", "more", "specific"]
       req_path = right_path ++ ["extra"]
-      expected = {"localhost", right_path, [], [], true}
+      expected = {"localhost", right_path, [], [], true, []}
       routes = [
         {"localhost", wrong_path, [], []},
         expected

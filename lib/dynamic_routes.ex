@@ -28,22 +28,22 @@ defmodule Heimdall.DynamicRoutes do
     register(tab, host, path, plugs, opts)
   end
 
-  def register(tab, {_, _, _, _, _} = route) do
+  def register(tab, {_, _, _, _, _, _} = route) do
     true = :ets.insert(tab, route)
   end
 
   @doc """
   Registers a route for later lookup
   """
-  def register(tab, host, path, plugs, opts, strip_path \\ true) do
-    register(tab, {host, path, plugs, opts, strip_path})
+  def register(tab, host, path, plugs, opts, strip_path \\ true, proxy_path \\ []) do
+    register(tab, {host, path, plugs, opts, strip_path, proxy_path})
   end
 
   @doc """
   Unregisters a route given its host and path
   """
   def unregister(tab, host, path) do
-    true = :ets.match_delete(tab, {host, path, :_, :_, :_})
+    true = :ets.match_delete(tab, {host, path, :_, :_, :_, :_})
   end
 
   @doc """
@@ -65,17 +65,17 @@ defmodule Heimdall.DynamicRoutes do
       iex> Heimdall.DynamicRoutes.register(:some_table, "localhost", ["test", "path"], [], [])
       true
       iex> Heimdall.DynamicRoutes.lookup_path(:some_table, "localhost", ["test", "path"])
-      {"localhost", ["test", "path"], [], [], true}
+      {"localhost", ["test", "path"], [], [], true, []}
 
       iex> Heimdall.DynamicRoutes.register(:some_table, "localhost", ["test", "path"], [], [])
       true
       iex> Heimdall.DynamicRoutes.lookup_path(:some_table, "localhost", ["test", "path", "but", "longer"])
-      {"localhost", ["test", "path"], [], [], true}
+      {"localhost", ["test", "path"], [], [], true, []}
   """
   def lookup_path(tab, host, conn_path) do
     pattern = match_spec_patterns(host, conn_path)
     :ets.select(tab, pattern)
-    |> Enum.sort_by(fn {_, path, _, _, _} -> -length(path) end) # Take the most specific (longest) paths first
+    |> Enum.sort_by(fn {_, path, _, _, _, _} -> -length(path) end) # Take the most specific (longest) paths first
     |> List.first
   end
 
@@ -91,18 +91,18 @@ defmodule Heimdall.DynamicRoutes do
     |> Enum.scan([], &(&2 ++ [&1])) # Enumerates possible path prefixes to match
     |> (fn p -> if length(p) == 0, do: [[]], else: p end).() # Handle if the list is empty
     |> Enum.flat_map(fn prefix -> [ # Generate match specs
-      {{host, prefix, :_, :_, :_}, [], [:"$_"]} # Will only match this prefix
+      {{host, prefix, :_, :_, :_, :_}, [], [:"$_"]} # Will only match this prefix
     ] end)
   end
 
   def call(conn, tab) do
     case lookup_path(tab, conn.host, conn.path_info) do
-      {_, path, plugs, opts, strip_path} ->
+      {_, path, plugs, opts, strip_path, proxy_path} ->
         new_conn  = if strip_path do
           {base, new_path} = Enum.split(conn.path_info, length(path))
-          %{ conn | path_info: new_path, script_name: conn.script_name ++ base }
+          %{ conn | path_info: proxy_path ++ new_path, script_name: conn.script_name ++ base }
         else
-          conn
+          %{ conn | path_info: proxy_path ++ conn.path_info }
         end
         wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
       _ -> 
