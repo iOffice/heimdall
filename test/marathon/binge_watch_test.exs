@@ -31,62 +31,74 @@ defmodule Heimdall.Test.BingeWatch do
 
   describe "build_route" do
     test "properly parses all given parameters" do
-      labels = %{
+      app = %{
         "heimdall.host" => "localhost",
         "heimdall.path" => "/test",
         "heimdall.options" => ~s({"forward_url": "localhost:8080/test"}),
         "heimdall.filters" => ~s(["Heimdall.Test.BingeWatch.TestPlug"])
       }
-      app = %{
-        "labels" => labels
-      }
       expected = {
         "localhost",
         ["test"],
         [Heimdall.Test.BingeWatch.TestPlug],
-        %{"forward_url" => "localhost:8080/test"}
+        %{"forward_url" => "localhost:8080/test"},
+        true,
+        []
       }
       result = BingeWatch.build_route(app)
       assert expected == result
     end
 
     test "handles missing labels" do
-      labels = %{
+      app = %{
         "heimdall.host" => "localhost",
         "heimdall.path" => "/test",
       }
-      app = %{
-        "labels" => labels
-      }
-      expected = {"localhost", ["test"], [], %{}}
+      expected = {"localhost", ["test"], [], %{}, true, []}
       result = BingeWatch.build_route(app)
       assert expected == result
     end
 
     test "should return error when there is an error decoding filters" do
-      labels = %{
+      app = %{
         "heimdall.host" => "localhost",
         "heimdall.path" => "/test",
         "heimdall.filters" => "[}"
-      }
-      app = %{
-        "labels" => labels
       }
       result = BingeWatch.build_route(app)
       assert {:error, _} = result
     end
 
     test "should return error when there is an error decoding opts" do
-      labels = %{
+      app = %{
         "heimdall.host" => "localhost",
         "heimdall.path" => "/test",
         "heimdall.options" => "[}"
       }
-      app = %{
-        "labels" => labels
-      }
       result = BingeWatch.build_route(app)
       assert {:error, _} = result
+    end
+
+    test "handles strip path" do
+      app = 
+        %{
+          "heimdall.host" => "host",
+          "heimdall.path" => "/",
+          "heimdall.strip_path" => "false"
+        }
+      result = BingeWatch.build_route(app)
+      assert elem(result, 4) == false
+    end
+
+    test "handles proxy path" do
+      app = 
+        %{
+          "heimdall.host" => "host",
+          "heimdall.path" => "/",
+          "heimdall.proxy_path" => "/proxy/path"
+        }
+      result = BingeWatch.build_route(app)
+      assert elem(result, 5) == ["proxy", "path"]
     end
   end
 
@@ -115,6 +127,28 @@ defmodule Heimdall.Test.BingeWatch do
       result = BingeWatch.build_routes(apps)
       assert result == []
     end
+
+    test "turns multiple entrypoints into multiple routes" do
+      app = 
+        %{
+          "heimdall.host" => "host",
+          "heimdall.path" => "/",
+          "heimdall.entrypoints" => "[{\"heimdall.host\": \"test\"}]"
+        }
+      results = BingeWatch.build_routes([%{"labels" => app}])
+      assert length(results) == 2
+    end
+
+    test "multipe entrypoints overwrite the top level settings" do
+      app = 
+        %{
+          "heimdall.host" => "host",
+          "heimdall.path" => "/",
+          "heimdall.entrypoints" => "[{\"heimdall.host\": \"test\"}]"
+        }
+      results = BingeWatch.build_routes([%{"labels" => app}])
+      assert Enum.find(results, fn route -> elem(route, 0) == "test" end)
+    end
   end
 
   describe "handle_info" do
@@ -122,7 +156,7 @@ defmodule Heimdall.Test.BingeWatch do
       app_response = File.read!("test/marathon/app_response.json")
       response = {:ok, %HTTPoison.Response{status_code: 200, body: app_response}}
       with_request_response response do
-        chunk = %HTTPoison.AsyncChunk{chunk: "test", id: make_ref}
+        chunk = %HTTPoison.AsyncChunk{chunk: "test", id: make_ref()}
         assert {:noreply, _state} = BingeWatch.handle_info(chunk, marathon_url: "test")
       end
     end
