@@ -4,7 +4,7 @@ defmodule Heimdall.Mixfile do
   def project do
     [
       app: :heimdall,
-      version: "0.6.0",
+      version: "0.6.1",
       elixir: "~> 1.5",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
@@ -37,7 +37,7 @@ defmodule Heimdall.Mixfile do
       {:rackla, "~> 1.2"},
       {:cowboy, "~> 1.0.0"},
       {:plug, "~> 1.0"},
-      {:httpoison, "~> 0.9.0"},
+      {:httpoison, "~> 0.12.0"},
       {:mock, "~> 0.1.1", only: :test},
       {:ex_doc, ">= 0.0.0", only: :dev}
     ]
