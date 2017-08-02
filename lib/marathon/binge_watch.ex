@@ -107,7 +107,7 @@ defmodule Heimdall.Marathon.BingeWatch do
     with {:ok, filters} <- Poison.decode(filters_string),
          {:ok, opts_map} <- Poison.decode(opts_string),
          plugs = Enum.map(filters, &string_to_module/1),
-         opts = opts_map |> Enum.into([], fn {k, v} -> {String.to_existing_atom(k), v} end),
+         opts = opts_map |> Enum.into([], fn {k, v} -> {String.to_atom(k), v} end),
     do: {host, path, plugs, opts, strip_path, proxy_path}
   end
 
