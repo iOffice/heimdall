@@ -114,7 +114,8 @@ defmodule Heimdall.DynamicRoutes do
           %{ conn | path_info: proxy_path ++ conn.path_info }
         end
         filter_before = Application.get_env(:heimdall, :filter_before_all, [])
-        wrap_plugs(filter_before ++ plugs, ForwardRequest).(new_conn, opts)
+        global_opts = Application.get_env(:heimdall, :global_opts, [])
+        wrap_plugs(filter_before ++ plugs, ForwardRequest).(new_conn, Keyword.merge(global_opts, opts))
       _ -> 
         send_resp(conn, 404, "no routes found")
     end

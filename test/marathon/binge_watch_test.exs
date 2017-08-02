@@ -41,7 +41,7 @@ defmodule Heimdall.Test.BingeWatch do
         "localhost",
         ["test"],
         [Heimdall.Test.BingeWatch.TestPlug],
-        %{"forward_url" => "localhost:8080/test"},
+        [forward_url: "localhost:8080/test"],
         true,
         []
       }
@@ -54,7 +54,7 @@ defmodule Heimdall.Test.BingeWatch do
         "heimdall.host" => "localhost",
         "heimdall.path" => "/test",
       }
-      expected = {"localhost", ["test"], [], %{}, true, []}
+      expected = {"localhost", ["test"], [], [], true, []}
       result = BingeWatch.build_route(app)
       assert expected == result
     end

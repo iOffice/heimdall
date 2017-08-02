@@ -40,6 +40,16 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
   end
 
+  defmodule OptsPlug do
+    def init(opts), do: opts
+
+    def call(conn, opts) do
+      conn
+      |> assign(:opts, opts)
+    end
+  end
+
+
   defmodule MockForwardRequest do
     def init(opts), do: opts
     def call(conn, _opts), do: conn
@@ -63,7 +73,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "after register for a route calls the registered plug", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], [])
       with_forward_mock do
         conn =
           :get
@@ -74,7 +84,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "after register and unregister all returns 404", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], [])
       DynamicRoutes.unregister_all(tab)
       with_forward_mock do
         conn =
@@ -87,7 +97,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "after register and unregister of route returns 404", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [Heimdall.Test.DynamicRoutes.TestPlug1], [])
       DynamicRoutes.unregister(tab, "localhost", ["test"])
       with_forward_mock do
         conn =
@@ -100,8 +110,8 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "finds correct route when there are two routes", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test1"], [Heimdall.Test.DynamicRoutes.TestPlug1], {})
-      DynamicRoutes.register(tab, "localhost", ["test2"], [Heimdall.Test.DynamicRoutes.TestPlug2], {})
+      DynamicRoutes.register(tab, "localhost", ["test1"], [Heimdall.Test.DynamicRoutes.TestPlug1], [])
+      DynamicRoutes.register(tab, "localhost", ["test2"], [Heimdall.Test.DynamicRoutes.TestPlug2], [])
       with_forward_mock do
         conn =
           :get
@@ -113,7 +123,7 @@ defmodule Heimdall.Test.DynamicRoutes do
 
     test "works when there are multipe plugs", %{tab: tab} do
       plugs = [Heimdall.Test.DynamicRoutes.TestPlug1, Heimdall.Test.DynamicRoutes.TestPlug2]
-      DynamicRoutes.register(tab, "localhost", ["test"], plugs, {})
+      DynamicRoutes.register(tab, "localhost", ["test"], plugs, [])
       with_forward_mock do
         conn =
           :get
@@ -124,7 +134,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "strips the path that it matches", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [], [])
       with_forward_mock do
         conn =
           :get
@@ -135,7 +145,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "leaves the path after what it matched", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [], [])
       with_forward_mock do
         conn =
           :get
@@ -146,7 +156,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "matched host with no routes should give 404", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["test"], [], {})
+      DynamicRoutes.register(tab, "localhost", ["test"], [], [])
       with_forward_mock do
         conn =
           :get
@@ -157,7 +167,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "works with a configuration of / (root route)", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", [], [TestPlug2], {})
+      DynamicRoutes.register(tab, "localhost", [], [TestPlug2], [])
       with_forward_mock do
         conn =
           :get
@@ -168,7 +178,7 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "appends proxy path to beginning of matched request", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], {}, true, ["proxy"])
+      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], [], true, ["proxy"])
       with_forward_mock do
         conn =
           :get
@@ -179,13 +189,25 @@ defmodule Heimdall.Test.DynamicRoutes do
     end
 
     test "appends proxy path before at the begging without stripping path", %{tab: tab} do
-      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], {}, false, ["proxy"])
+      DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], [], false, ["proxy"])
       with_forward_mock do
         conn =
           :get
           |> conn("http://localhost/path")
           |> DynamicRoutes.call(tab)
         assert conn.path_info == ["proxy", "path"]
+      end
+    end
+
+    test "Merges global_opts keyword list with tab's opts keyword list", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", ["path"], [OptsPlug], [test2: "right", overwrite: "right"], false, [])
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/path")
+          |> DynamicRoutes.call(tab)
+        # The first test comes from config/test.exs
+        assert conn.assigns[:opts] == [test_opt: "this is a test option", test2: "right", overwrite: "right"]
       end
     end
   end

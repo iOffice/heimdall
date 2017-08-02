@@ -35,6 +35,8 @@ Additionally, if you have a filter that needs to be to run before every request,
 add it to the OTP application config `:filter_before_all`, which is a list of plugs that
 run for every request. This is useful for things that should happen globally, like caching
 and monitoring.
+Similarly, you can specify a global keyword list of opts to pass into every plug with
+`:global_opts`. These values will be overwritten by the service's `heimdall.opts` config.
 
 Ideally, Heimdall should forward requests to a load balancer that knows how to
 send each request to an actual instance of the microservice it's trying to get

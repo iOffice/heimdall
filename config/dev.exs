@@ -5,4 +5,5 @@ config :heimdall,
   default_forward_url: "http://localhost/",
   register_marathon: false,
   port: 4000,
-  filter_before_all: []
+  filter_before_all: [],
+  global_opts: []
