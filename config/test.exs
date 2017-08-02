@@ -6,4 +6,4 @@ config :heimdall,
   register_marathon: false,
   port: 4000,
   filter_before_all: [],
-  global_opts: [test_opt: "this is a test option"]
+  global_opts: [test_opt: "this is a test option", overwrite: "this should be overwritten"]
