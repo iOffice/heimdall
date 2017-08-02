@@ -4,8 +4,8 @@ defmodule Heimdall.Mixfile do
   def project do
     [
       app: :heimdall,
-      version: "0.5.0",
-      elixir: "~> 1.3",
+      version: "0.6.0",
+      elixir: "~> 1.5",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
       deps: deps(),
