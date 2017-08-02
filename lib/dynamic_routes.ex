@@ -95,6 +95,15 @@ defmodule Heimdall.DynamicRoutes do
     ] end)
   end
 
+  @doc """
+  Call is responsible for the majority of the logic in heimdall. 
+
+  It looks up the incoming request using `Heimdall.DynamicRoutes.lookup_path/3`. 
+  If the path matches it either strips the matched path and moves it into the 
+  `script_name` property of the `Conn` or leaves it as be. Finally it wraps all
+  the filter plugs, starting with the plugs in specified in the `:filter_before_all`
+  app config, and ending with the `Heimdall.Plug.ForwardRequest` plug.
+  """
   def call(conn, tab) do
     case lookup_path(tab, conn.host, conn.path_info) do
       {_, path, plugs, opts, strip_path, proxy_path} ->
@@ -104,7 +113,9 @@ defmodule Heimdall.DynamicRoutes do
         else
           %{ conn | path_info: proxy_path ++ conn.path_info }
         end
-        wrap_plugs(plugs, ForwardRequest).(new_conn, opts)
+        filter_before = Application.get_env(:heimdall, :filter_before_all, [])
+        global_opts = Application.get_env(:heimdall, :global_opts, [])
+        wrap_plugs(filter_before ++ plugs, ForwardRequest).(new_conn, Keyword.merge(global_opts, opts))
       _ -> 
         send_resp(conn, 404, "no routes found")
     end

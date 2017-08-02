@@ -105,8 +105,9 @@ defmodule Heimdall.Marathon.BingeWatch do
     strip_path = app |> Map.get("heimdall.strip_path", "true") == "true"
     proxy_path = app |> Map.get("heimdall.proxy_path", "/") |> Utils.split
     with {:ok, filters} <- Poison.decode(filters_string),
-         {:ok, opts} <- Poison.decode(opts_string),
+         {:ok, opts_map} <- Poison.decode(opts_string),
          plugs = Enum.map(filters, &string_to_module/1),
+         opts = opts_map |> Enum.into([], fn {k, v} -> {String.to_existing_atom(k), v} end),
     do: {host, path, plugs, opts, strip_path, proxy_path}
   end
 

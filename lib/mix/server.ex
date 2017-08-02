@@ -4,7 +4,7 @@ defmodule Mix.Tasks.Server do
 
   def run(_args) do
     Mix.Task.run "app.start", []
-    unless iex_running?, do: :timer.sleep(:infinity)
+    unless iex_running?(), do: :timer.sleep(:infinity)
   end
 
   def iex_running? do
