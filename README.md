@@ -33,7 +33,8 @@ config. In other words, if `heimdal.filters` is: `["Plugs.First", "Plugs.Second"
 
 Additionally, if you have a filter that needs to be to run before every request, you can
 add it to the OTP application config `:filter_before_all`, which is a list of plugs that
-run for every request.
+run for every request. This is useful for things that should happen globally, like caching
+and monitoring.
 
 Ideally, Heimdall should forward requests to a load balancer that knows how to
 send each request to an actual instance of the microservice it's trying to get
