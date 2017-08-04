@@ -89,7 +89,7 @@ defmodule Heimdall.DynamicRoutes do
     # and any part of the path as a prefix
     path
     |> Enum.scan([], &(&2 ++ [&1])) # Enumerates possible path prefixes to match
-    |> (fn p -> if length(p) == 0, do: [[]], else: p end).() # Handle if the list is empty
+    |> (fn p -> p ++ [[]] end).() # Append [] to always match /
     |> Enum.flat_map(fn prefix -> [ # Generate match specs
       {{host, prefix, :_, :_, :_, :_}, [], [:"$_"]} # Will only match this prefix
     ] end)

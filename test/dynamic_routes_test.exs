@@ -177,6 +177,17 @@ defmodule Heimdall.Test.DynamicRoutes do
       end
     end
 
+    test "works with a configuration of / and forwards the rest", %{tab: tab} do
+      DynamicRoutes.register(tab, "localhost", [], [TestPlug2], [])
+      with_forward_mock do
+        conn =
+          :get
+          |> conn("http://localhost/test")
+          |> DynamicRoutes.call(tab)
+        assert conn.assigns[:test2] == "test"
+      end
+    end
+
     test "appends proxy path to beginning of matched request", %{tab: tab} do
       DynamicRoutes.register(tab, "localhost", ["path"], [TestPlug2], [], true, ["proxy"])
       with_forward_mock do
