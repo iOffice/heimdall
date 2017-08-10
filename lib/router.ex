@@ -10,15 +10,25 @@ defmodule Heimdall.Router do
 
   use Plug.Router
   alias Heimdall.DynamicRoutes
+  import Plug.Conn
   import Rackla
 
   plug :match
   plug :dispatch
 
   get "/heimdall-health-check" do
-    Application.fetch_env!(:heimdall, :marathon_url) <> "/ping"
-    |> request
-    |> response
+    resp = 
+      Application.fetch_env!(:heimdall, :marathon_url) <> "/ping"
+      |> request(full: true)
+      |> collect
+    case resp do
+      %Rackla.Response{status: 200, headers: _headers, body: "pong\n"} ->
+        conn
+        |> resp(200, "ok")
+      _other ->
+        conn
+        |> resp(500, "not ok")
+    end
   end
 
   forward "/", to: DynamicRoutes, tab: :heimdall_routes

@@ -73,6 +73,9 @@ defmodule Heimdall.Plug.ForwardRequest do
         |> set_headers(headers)
       other ->
         Logger.warn("Problem connecting to service: #{inspect(other)}\nRequest path: #{inspect(new_url)}")
+        Logger.debug("Rackla Request: #{inspect(forward_request)}")
+        Logger.debug("Conn: #{inspect(conn)}")
+        Logger.debug("Opts: #{inspect(rackla_opts)}")
         conn
         |> resp(500, "An error occured communicating with service, reason: #{inspect(other)}")
     end
