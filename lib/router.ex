@@ -22,7 +22,7 @@ defmodule Heimdall.Router do
       |> request(full: true)
       |> collect
     case resp do
-      %Rackla.Response{status: 200, headers: _headers, body: "pong\n"} ->
+      %Rackla.Response{status: 200} ->
         conn
         |> resp(200, "ok")
       _other ->
