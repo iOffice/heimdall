@@ -55,6 +55,7 @@ defmodule Heimdall.Plug.ForwardRequest do
   defp forward_conn(conn, forward_url, opts) do
     {_, {:ok, forward_request}} = incoming_request_conn(conn)
     new_url = build_url(forward_url, conn)
+    new_host = new_url |> URI.parse() |> Map.get(:host)
     rackla_opts = [
       follow_redirect: true, 
       force_redirect: true, 
@@ -63,6 +64,7 @@ defmodule Heimdall.Plug.ForwardRequest do
     ] |> Keyword.merge(opts)
     rackla_response =
       forward_request
+      |> Map.update(:headers, %{}, &(Map.put(&1, "host", new_host)))
       |> Map.put(:url, new_url)
       |> request(rackla_opts)
       |> collect
