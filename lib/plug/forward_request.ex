@@ -39,7 +39,7 @@ defmodule Heimdall.Plug.ForwardRequest do
 
   def build_url(base, conn) do
     has_trailing_slash = String.ends_with?(conn.request_path, "/")
-    path_suffix = if has_trailing_slash, do: "/", else: ""
+    path_suffix =  ""
     query_string = build_query_string(conn.query_string)
     request_path = build_request_path(conn.path_info) <> path_suffix
 
@@ -62,12 +62,15 @@ defmodule Heimdall.Plug.ForwardRequest do
       full: true,
       receive_timeout: 10_000
     ] |> Keyword.merge(opts)
-    rackla_response =
+    rackla_request =
       forward_request
       |> Map.update(:headers, %{}, &(Map.put(&1, "host", new_host)))
       |> Map.put(:url, new_url)
+    rackla_response =
+      rackla_request
       |> request(rackla_opts)
       |> collect
+    IO.inspect(rackla_request)
     case rackla_response do
       %Rackla.Response{status: status, headers: headers, body: body} ->
         conn
@@ -75,7 +78,7 @@ defmodule Heimdall.Plug.ForwardRequest do
         |> set_headers(headers)
       other ->
         Logger.warn("Problem connecting to service: #{inspect(other)}\nRequest path: #{inspect(new_url)}")
-        Logger.debug("Rackla Request: #{inspect(forward_request)}")
+        Logger.debug("Rackla Request: #{inspect(rackla_request)}")
         Logger.debug("Conn: #{inspect(conn)}")
         Logger.debug("Opts: #{inspect(rackla_opts)}")
         conn
