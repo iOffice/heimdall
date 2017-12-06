@@ -18,7 +18,7 @@ defmodule Heimdall.DynamicRoutes do
   alias Heimdall.Plug.ForwardRequest
 
   def new(table_name) do
-    :ets.new(table_name, [:named_table, :set, :public, keypos: 2])
+    :ets.new(table_name, [:named_table, :bag, :public])
   end
 
   @doc """

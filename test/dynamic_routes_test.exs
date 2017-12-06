@@ -263,5 +263,15 @@ defmodule Heimdall.Test.DynamicRoutes do
       result = DynamicRoutes.lookup_path(tab, "localhost", req_path)
       assert result == expected
     end
+
+    test "works for same paths with two different hosts", %{tab: tab} do
+      path = ["test", "path"]
+      route1 = {"host1", path, [], [], true, []}
+      route2 = {"host2", path, [], [], true, []}
+      DynamicRoutes.register(tab, route1)
+      DynamicRoutes.register(tab, route2)
+      result = DynamicRoutes.lookup_path(tab, "host1", path)
+      assert result == route1
+    end
   end
 end
