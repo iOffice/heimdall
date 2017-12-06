@@ -4,7 +4,7 @@ defmodule Heimdall.Mixfile do
   def project do
     [
       app: :heimdall,
-      version: "0.6.7",
+      version: "0.6.8",
       elixir: "~> 1.5",
       build_embedded: Mix.env == :prod,
       start_permanent: Mix.env == :prod,
@@ -47,6 +47,7 @@ defmodule Heimdall.Mixfile do
     [
       description: "API gateway for Marathon/Mesos",
       maintainers: ["Cameron Alexander"],
+      organization: "ioffice",
       licenses: ["MIT"],
       links: %{"GitHub" => "http://github.com/iOffice/heimdall"}
     ]
