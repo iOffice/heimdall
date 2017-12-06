@@ -1,5 +1,5 @@
 defmodule Heimdall.Test.Plug.ForwardRequestTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case
   use Plug.Test
 
   import Plug.Test

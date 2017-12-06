@@ -39,7 +39,7 @@ defmodule Heimdall.Plug.ForwardRequest do
 
   def build_url(base, conn) do
     has_trailing_slash = String.ends_with?(conn.request_path, "/")
-    path_suffix =  ""
+    path_suffix =  if has_trailing_slash, do: "/", else: ""
     query_string = build_query_string(conn.query_string)
     request_path = build_request_path(conn.path_info) <> path_suffix
 
@@ -70,7 +70,6 @@ defmodule Heimdall.Plug.ForwardRequest do
       rackla_request
       |> request(rackla_opts)
       |> collect
-    IO.inspect(rackla_request)
     case rackla_response do
       %Rackla.Response{status: status, headers: headers, body: body} ->
         conn
