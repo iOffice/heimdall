@@ -21,7 +21,7 @@ labels used to decide how a request gets routed for an app:
  * `heimdall.opts` - a JSON object of options that gets passed into each plug
  * `heimdall.strip_path` - a boolean flag that whether the matched path should be removed when forwarding the request
  * `heimdall.proxy_path` - a path that is appended to the beginning of the forwarded path
- * `heimdall.entrypoints` - a JSON list of objects of several entrypoints described [below](/#multiple-entrypoints)
+ * `heimdall.entrypoints` - a JSON list of objects of several entrypoints described [below](#multiple-entrypoints)
 
 Filters can be viewed as a pipeline of plugs (simple functions that take a 
 request and return a changed request or a response), 
