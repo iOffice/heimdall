@@ -9,7 +9,7 @@ to their intended services.
 ## Usage
 
 When the application starts, it will attempt to register itself as a 
-Marathon subscriber. Once registered as a callback, Heimdall will start 
+Marathon subscriber. Once registered Heimdall will start 
 listening for change events from Marathon, reloading its dynamic 
 routing config on each change.
 
@@ -21,6 +21,7 @@ labels used to decide how a request gets routed for an app:
  * `heimdall.opts` - a JSON object of options that gets passed into each plug
  * `heimdall.strip_path` - a boolean flag that whether the matched path should be removed when forwarding the request
  * `heimdall.proxy_path` - a path that is appended to the beginning of the forwarded path
+ * `heimdall.entrypoints` - a JSON list of objects of several entrypoints described [below](/#multiple-entrypoints)
 
 Filters can be viewed as a pipeline of plugs (simple functions that take a 
 request and return a changed request or a response), 
@@ -47,6 +48,22 @@ balancer) is an OTP application setting, `:default_forward_url` (see `config/dev
 for an example of the config). If you wish to set the forward location on 
 a per service basis, you can set `forward_url` in `heimdall.opts` (this gets passed to 
 `Heimdall.Plug.ForwardRequest`)
+
+## Multiple Entrypoints
+
+The `heimdall.entrypoints` config option allows a service to have multiple ways to get to the service.
+It's a JSON list of objects, and each object is its own heimdall config. For example:
+```
+{
+  "heimdall.path": "/test",
+  "heimdall.options": "{\"forward_url\": \"http://localhost:8081\"}",
+  "heimdall.filters": "[]",
+  "heimdall.entrypoints": "[{\"heimdall.host\": \"example.com\"}, {\"\heimdall.host": \"test.com\"}]"
+}
+```
+This config specifies two entrypoints, so that requests to both `example.com/test` and `test.com/test`
+will get forwared to `http://localhost:8081`. Each entrypoint inherits the top level config and can
+override values with its own config.
 
 ## Installation
 
